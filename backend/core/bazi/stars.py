@@ -47,6 +47,23 @@ _ACADEMIC_BY_DAY_STEM: dict[int, int] = {
 }
 
 
+# --- 驿马 (Sky Horse) — travel, relocation, sudden change -----------------
+# Classic formula: opposite branch of the 三合 triad the day branch belongs to.
+#   申子辰 (water triad) → 寅
+#   亥卯未 (wood triad)  → 巳
+#   寅午戌 (fire triad)  → 申
+#   巳酉丑 (metal triad) → 亥
+_SKY_HORSE_BY_DAY_BRANCH: dict[int, int] = {}
+for triad, horse in (
+    (frozenset({8, 0, 4}),  2),   # 申子辰 → 寅
+    (frozenset({11, 3, 7}), 5),   # 亥卯未 → 巳
+    (frozenset({2, 6, 10}), 8),   # 寅午戌 → 申
+    (frozenset({5, 9, 1}),  11),  # 巳酉丑 → 亥
+):
+    for b in triad:
+        _SKY_HORSE_BY_DAY_BRANCH[b] = horse
+
+
 def find_stars(pillars: FourPillars) -> dict[str, list[str]]:
     """Return {star_name: [pillar_labels_where_it_appears]}."""
     dm = pillars.day.stem_index
@@ -62,10 +79,12 @@ def find_stars(pillars: FourPillars) -> dict[str, list[str]]:
         "nobleman": [],
         "peach_blossom": [],
         "academic": [],
+        "sky_horse": [],
     }
     nobleman_branches = _NOBLEMAN_BY_DAY_STEM.get(dm, frozenset())
     peach_branch = _PEACH_BY_DAY_BRANCH.get(day_branch)
     academic_branch = _ACADEMIC_BY_DAY_STEM.get(dm)
+    sky_horse_branch = _SKY_HORSE_BY_DAY_BRANCH.get(day_branch)
 
     for label, p in labelled:
         if p.branch_index in nobleman_branches:
@@ -74,12 +93,39 @@ def find_stars(pillars: FourPillars) -> dict[str, list[str]]:
             result["peach_blossom"].append(label)
         if academic_branch is not None and p.branch_index == academic_branch:
             result["academic"].append(label)
+        if sky_horse_branch is not None and p.branch_index == sky_horse_branch:
+            result["sky_horse"].append(label)
 
     return result
+
+
+def star_branches(pillars: FourPillars) -> dict[str, str | None]:
+    """Return the 'triggering branch' name for each star, as Chinese character.
+
+    Lets the frontend show `Nobleman: 子, 申` style labels regardless of whether
+    the star appears in the chart.
+    """
+    from .constants import EARTHLY_BRANCHES
+
+    dm = pillars.day.stem_index
+    day_branch = pillars.day.branch_index
+
+    nob = sorted(_NOBLEMAN_BY_DAY_STEM.get(dm, frozenset()))
+    peach = _PEACH_BY_DAY_BRANCH.get(day_branch)
+    academic = _ACADEMIC_BY_DAY_STEM.get(dm)
+    sky_horse = _SKY_HORSE_BY_DAY_BRANCH.get(day_branch)
+
+    return {
+        "nobleman":      " ".join(EARTHLY_BRANCHES[b] for b in nob) if nob else None,
+        "peach_blossom": EARTHLY_BRANCHES[peach] if peach is not None else None,
+        "academic":      EARTHLY_BRANCHES[academic] if academic is not None else None,
+        "sky_horse":     EARTHLY_BRANCHES[sky_horse] if sky_horse is not None else None,
+    }
 
 
 STAR_HINT = {
     "nobleman": "Nobleman (天乙贵人) — mentors and helpers appear when needed.",
     "peach_blossom": "Peach Blossom (桃花) — magnetism, romantic opportunity, artistic charm.",
-    "academic": "Academic Star (文昌) — learning, literary talent, exam/credential luck.",
+    "academic": "Intelligence / Academic (文昌) — learning, literary talent, exam/credential luck.",
+    "sky_horse": "Sky Horse (驿马) — travel, relocation, sudden change, international opportunity.",
 }

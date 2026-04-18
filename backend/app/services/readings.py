@@ -7,10 +7,13 @@ from datetime import datetime
 from ...core.bazi.calculator import FourPillars, Pillar, four_pillars
 from ...core.bazi.constants import BRANCH_PINYIN, STEM_PINYIN
 from ...core.bazi.elements import element_balance
+from ...core.bazi.factors import five_factors
+from ...core.bazi.kua import compute_life_kua
 from ...core.bazi.luck import annual_pillar, luck_pillars
+from ...core.bazi.mansions import mansions_for
 from ...core.bazi.nayin import nayin_for
 from ...core.bazi.relations import chart_relations
-from ...core.bazi.stars import STAR_HINT, find_stars
+from ...core.bazi.stars import STAR_HINT, find_stars, star_branches
 from ...core.bazi.strength import day_master_strength
 from ...core.bazi.ten_gods import (
     AREA_RULERS,
@@ -23,17 +26,22 @@ from ..schemas import (
     AnnualLuckOut,
     BaZiReading,
     CompatibilityReading,
+    DailyCalendarDay,
     DailyLuck,
     DayMasterAnalysis,
     DeepBaZiReading,
     DeepNumerologyReading,
     DeepPillar,
+    DirectionInfo,
+    FiveFactor,
     HiddenStem,
+    LifeKuaInfo,
     LuckPillarOut,
     NumerologyReading,
     PairAnalysisItem,
     Pillar as PillarSchema,
     RelationItem,
+    StarInfo,
 )
 from ...core.numerology.pairs import LIFE_PATH_THEMES, analyse_pairs, life_path
 from ...core.numerology.scorer import score_number
@@ -315,6 +323,81 @@ def _element_area_hint(elem: str) -> str:
     return _ELEMENT_AREA.get(elem, elem)
 
 
+_CAREER_LIBRARY = {
+    "wood":  ["education", "publishing", "forestry", "wellness / herbs", "coaching", "non-profit"],
+    "fire":  ["marketing", "performance / entertainment", "hospitality", "optics / beauty", "restaurants"],
+    "earth": ["real estate", "construction", "agriculture", "HR / operations", "insurance"],
+    "metal": ["finance", "law", "engineering", "precision manufacturing", "surgery", "military / police", "IT security"],
+    "water": ["transport / logistics", "maritime", "consulting", "research", "writing", "trading", "fluid arts"],
+}
+
+
+def _career_paths(useful: str, day_master_elem: str) -> list[str]:
+    picks = list(_CAREER_LIBRARY.get(useful, []))
+    picks += _CAREER_LIBRARY.get(day_master_elem, [])
+    seen: set[str] = set()
+    out: list[str] = []
+    for p in picks:
+        if p not in seen:
+            out.append(p)
+            seen.add(p)
+    return out
+
+
+def _wealth_strategy(dms, bal: dict[str, float]) -> list[str]:
+    hints = []
+    wealth_elem_strong = dms.level == "strong"
+    if wealth_elem_strong:
+        hints.append("Chart is strong enough to absorb risk — active wealth creation (business, investing) is favored over salaried accumulation.")
+    else:
+        hints.append("Chart benefits from steady, compound growth rather than speculation; dollar-cost averaging over decades produces the best outcome.")
+    hints.append(f"Your Useful God ({dms.useful_god}) sectors tend to bring money — favor investments/careers in those domains.")
+    hints.append(f"Avoid concentration in {dms.avoid_god}-heavy industries — they drain rather than feed your chart.")
+    return hints
+
+
+def _love_outlook(fp: FourPillars, dms) -> list[str]:
+    out = []
+    out.append(
+        "Most compatible Day Master: an " + _ideal_partner_dm(fp.day.stem_element) +
+        " Day Master partner, whose chart naturally nourishes yours."
+    )
+    out.append(
+        "Day Branch (marriage palace): " + fp.day.branch +
+        f" — hidden stems describe the partner's quality more than the visible stem."
+    )
+    if dms.level == "weak":
+        out.append("Weak Day Master: you benefit from a grounded, mature partner; avoid high-drama relationships that drain you further.")
+    elif dms.level == "strong":
+        out.append("Strong Day Master: you need a partner with their own center of gravity — someone who won't be overshadowed by your momentum.")
+    else:
+        out.append("Balanced Day Master: partnership flexibility is high; you can form durable bonds across several partner profiles.")
+    return out
+
+
+def _ideal_partner_dm(dm_elem: str) -> str:
+    # 'mother' element (the one that produces DM) is classically the
+    # smoothest partner element for a single-axis chart.
+    for e, v in PRODUCES.items():
+        if v == dm_elem:
+            return e
+    return dm_elem
+
+
+def _health_watch(dm_elem: str, weakest: str) -> list[str]:
+    tcm = {
+        "wood":  "liver, gallbladder, eyes, tendons",
+        "fire":  "heart, small intestine, cardiovascular, sleep",
+        "earth": "spleen, stomach, digestion, muscles",
+        "metal": "lungs, large intestine, skin, respiratory",
+        "water": "kidney, bladder, bones, reproductive",
+    }
+    return [
+        f"Day-Master organ system ({dm_elem} → {tcm[dm_elem]}) — stress shows up here first.",
+        f"Chart's weakest element ({weakest} → {tcm[weakest]}) — area most likely to under-function when rundown.",
+    ]
+
+
 def build_deep_bazi(birth: datetime, gender: str | None, today: datetime | None = None) -> DeepBaZiReading:
     today = today or datetime.now()
     fp = four_pillars(birth)
@@ -341,6 +424,11 @@ def build_deep_bazi(birth: datetime, gender: str | None, today: datetime | None 
         avoid_god=dms.avoid_god,
         explanation=dms.explanation,
     )
+
+    factor_rows = [
+        FiveFactor(key=r.key, label=r.label, element=r.element, amount=r.amount, percent=r.percent)
+        for r in five_factors(fp)
+    ]
 
     # Luck pillars
     lps = luck_pillars(fp, gender or "", count=8)
@@ -381,7 +469,53 @@ def build_deep_bazi(birth: datetime, gender: str | None, today: datetime | None 
     )
 
     # Stars
-    stars_map = find_stars(fp)
+    stars_present = find_stars(fp)
+    stars_triggers = star_branches(fp)
+    stars_out: dict[str, StarInfo] = {}
+    for key in ("nobleman", "peach_blossom", "academic", "sky_horse"):
+        stars_out[key] = StarInfo(
+            trigger_branch=stars_triggers.get(key),
+            present_in=stars_present.get(key, []),
+        )
+
+    # Life Kua + 8 Mansions
+    life_kua_info: LifeKuaInfo | None = None
+    lucky_dirs: list[DirectionInfo] = []
+    unlucky_dirs: list[DirectionInfo] = []
+    if gender:
+        kua = compute_life_kua(pillars=_solar_year_for(fp), gender=gender) if False else compute_life_kua(_solar_year_for(fp), gender)
+        life_kua_info = LifeKuaInfo(
+            number=kua.number,
+            trigram_cn=kua.trigram_cn,
+            trigram_pinyin=kua.trigram_pinyin,
+            element=kua.element,
+            seated_direction=kua.seated_direction,
+            group=kua.group,
+        )
+        mans = mansions_for(kua.number)
+        for direction, info in mans["lucky"].items():
+            lucky_dirs.append(DirectionInfo(
+                direction=direction,
+                direction_name=info["direction_name"],
+                category_key=info["category_key"],
+                cn=info["cn"],
+                en=info["en"],
+                meaning=info["meaning"],
+            ))
+        for direction, info in mans["unlucky"].items():
+            unlucky_dirs.append(DirectionInfo(
+                direction=direction,
+                direction_name=info["direction_name"],
+                category_key=info["category_key"],
+                cn=info["cn"],
+                en=info["en"],
+                meaning=info["meaning"],
+            ))
+        # stable ordering (Sheng Qi first etc.)
+        lucky_order = ["sheng_qi", "tian_yi", "yan_nian", "fu_wei"]
+        unlucky_order = ["jue_ming", "wu_gui", "liu_sha", "huo_hai"]
+        lucky_dirs.sort(key=lambda d: lucky_order.index(d.category_key))
+        unlucky_dirs.sort(key=lambda d: unlucky_order.index(d.category_key))
 
     # Relations
     rels_raw = chart_relations(fp)
@@ -408,13 +542,68 @@ def build_deep_bazi(birth: datetime, gender: str | None, today: datetime | None 
         elements=bal.as_dict,
         dominant_element=bal.dominant(),
         weakest_element=bal.weakest(),
-        stars=stars_map,
+        five_factors=factor_rows,
+        stars=stars_out,
+        life_kua=life_kua_info,
+        lucky_directions=lucky_dirs,
+        unlucky_directions=unlucky_dirs,
         relations=rels_out,
         luck_pillars=luck_out,
         annual_luck=annual_out,
         life_areas=_life_areas(fp),
         personality_notes=_personality_notes(fp, bal.as_dict),
+        career_paths=_career_paths(dms.useful_god, fp.day_master_element),
+        wealth_strategy=_wealth_strategy(dms, bal.as_dict),
+        love_outlook=_love_outlook(fp, dms),
+        health_watch=_health_watch(fp.day_master_element, bal.weakest()),
     )
+
+
+def _solar_year_for(fp: FourPillars) -> int:
+    """Reconstruct the Ba Zi solar year from the Year pillar.
+
+    Year pillar (stem_index, branch_index) resolves to sexagenary_index, and
+    solar_year = sexagenary_index + 60*k + 4. We use the era 1900-2100 and pick
+    the single k that places the year in that window.
+    """
+    sex = fp.year.sexagenary_index
+    for base in range(1900, 2100, 60):
+        year = base + ((sex - (base - 4)) % 60)
+        if 1900 <= year < 2100:
+            return year
+    return 1900 + sex
+
+
+def build_calendar(birth: datetime, year: int, month: int) -> list[DailyCalendarDay]:
+    """Daily-luck calendar for a whole month."""
+    from calendar import monthrange
+    _, days_in_month = monthrange(year, month)
+    results: list[DailyCalendarDay] = []
+    for d in range(1, days_in_month + 1):
+        day_dt = datetime(year, month, d, 12, 0)
+        luck = build_daily_luck(birth, day_dt)
+        results.append(
+            DailyCalendarDay(
+                date=luck.date,
+                score=luck.score,
+                label=_score_label(luck.score),
+                day_pillar_cn=f"{luck.day_pillar.stem}{luck.day_pillar.branch}",
+                day_pillar_element=luck.day_pillar.stem_element,
+            )
+        )
+    return results
+
+
+def _score_label(score: int) -> str:
+    if score >= 75:
+        return "excellent"
+    if score >= 60:
+        return "good"
+    if score >= 45:
+        return "neutral"
+    if score >= 30:
+        return "caution"
+    return "difficult"
 
 
 def build_deep_numerology(number: str) -> DeepNumerologyReading:

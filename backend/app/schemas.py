@@ -196,6 +196,37 @@ class RelationItem(BaseModel):
     note: str
 
 
+class FiveFactor(BaseModel):
+    key: str
+    label: str
+    element: str
+    amount: float
+    percent: float
+
+
+class DirectionInfo(BaseModel):
+    direction: str            # "S", "NE", etc.
+    direction_name: str       # "South", "Northeast"
+    category_key: str
+    cn: str
+    en: str
+    meaning: str
+
+
+class LifeKuaInfo(BaseModel):
+    number: int
+    trigram_cn: str
+    trigram_pinyin: str
+    element: str
+    seated_direction: str
+    group: str
+
+
+class StarInfo(BaseModel):
+    trigger_branch: str | None  # branch char that triggers this star
+    present_in: list[str]       # pillar labels where it appears
+
+
 class DeepBaZiReading(BaseModel):
     pillars: list[DeepPillar]
     chart_string: str
@@ -204,12 +235,28 @@ class DeepBaZiReading(BaseModel):
     elements: dict[str, float]
     dominant_element: str
     weakest_element: str
-    stars: dict[str, list[str]]
+    five_factors: list[FiveFactor]
+    stars: dict[str, StarInfo]
+    life_kua: LifeKuaInfo | None
+    lucky_directions: list[DirectionInfo]
+    unlucky_directions: list[DirectionInfo]
     relations: dict[str, list[RelationItem]]
     luck_pillars: list[LuckPillarOut]
     annual_luck: AnnualLuckOut
     life_areas: dict[str, dict[str, float | list[str]]]
     personality_notes: list[str]
+    career_paths: list[str]
+    wealth_strategy: list[str]
+    love_outlook: list[str]
+    health_watch: list[str]
+
+
+class DailyCalendarDay(BaseModel):
+    date: str
+    score: int
+    label: str                 # "excellent" | "good" | "neutral" | "caution" | "difficult"
+    day_pillar_cn: str
+    day_pillar_element: str
 
 
 class PairAnalysisItem(BaseModel):

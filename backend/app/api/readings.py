@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date as _date, datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ..db import get_db
@@ -14,6 +14,7 @@ from ..schemas import (
     BaZiReading,
     CompatibilityReading,
     CompatibilityRequest,
+    DailyCalendarDay,
     DailyLuck,
     DeepBaZiReading,
     DeepNumerologyReading,
@@ -22,6 +23,7 @@ from ..schemas import (
 )
 from ..services.readings import (
     build_bazi_reading,
+    build_calendar,
     build_compatibility,
     build_daily_luck,
     build_deep_bazi,
@@ -52,11 +54,25 @@ def profile_bazi(
 @router.get("/profiles/{profile_id}/daily", response_model=DailyLuck)
 def profile_daily(
     profile_id: int,
+    date: _date | None = Query(default=None, description="YYYY-MM-DD; defaults to today"),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> DailyLuck:
     profile = _owned_profile(db, user, profile_id)
-    return build_daily_luck(profile.birth_datetime, datetime.now())
+    when = datetime.combine(date, datetime.min.time().replace(hour=12)) if date else datetime.now()
+    return build_daily_luck(profile.birth_datetime, when)
+
+
+@router.get("/profiles/{profile_id}/calendar", response_model=list[DailyCalendarDay])
+def profile_calendar(
+    profile_id: int,
+    year: int = Query(..., ge=1900, le=2100),
+    month: int = Query(..., ge=1, le=12),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[DailyCalendarDay]:
+    profile = _owned_profile(db, user, profile_id)
+    return build_calendar(profile.birth_datetime, year, month)
 
 
 @router.get("/profiles/{profile_id}/deep", response_model=DeepBaZiReading)
