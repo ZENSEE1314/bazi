@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: bazi
+      POSTGRES_PASSWORD: bazi
+      POSTGRES_DB: bazi
+    ports:
+      - "5432:5432"
+    volumes:
+      - bazi_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bazi"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://bazi:bazi@db:5432/bazi
+      JWT_SECRET: dev-secret-change-me
+      CORS_ORIGINS: "*"
+      STATIC_DIR: /app/frontend/dist
+      PORT: "8000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  bazi_pg:

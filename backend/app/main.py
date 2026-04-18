@@ -1,0 +1,69 @@
+"""FastAPI application entry point."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+from .api import auth, profiles, readings
+from .config import get_settings
+from .db import Base, engine
+
+settings = get_settings()
+
+app = FastAPI(
+    title="Metaphysical Analysis & Numerology Suite",
+    version="0.1.0",
+    description="Ba Zi (Four Pillars) and Universal Numerology APIs.",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in settings.cors_origins.split(",")] if settings.cors_origins else ["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.on_event("startup")
+def _init_db() -> None:
+    # For production, prefer alembic migrations. This is a safety net for
+    # first boot and for dev SQLite.
+    Base.metadata.create_all(bind=engine)
+
+
+app.include_router(auth.router)
+app.include_router(profiles.router)
+app.include_router(readings.router)
+
+
+@app.get("/api/health", tags=["meta"])
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+# --- Static frontend serving ---------------------------------------------
+_static_dir = Path(settings.static_dir)
+if _static_dir.is_dir():
+    _assets = _static_dir / "assets"
+    if _assets.is_dir():
+        app.mount("/assets", StaticFiles(directory=str(_assets)), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def _spa_catchall(full_path: str):
+        # Serve files directly if they exist (e.g. /favicon.ico), otherwise
+        # fall back to index.html for SPA client-side routing.
+        if full_path:
+            candidate = _static_dir / full_path
+            if candidate.is_file():
+                return FileResponse(str(candidate))
+        index = _static_dir / "index.html"
+        if index.is_file():
+            return FileResponse(str(index))
+        return {"detail": "Frontend not built. Run `npm --prefix frontend run build`."}
