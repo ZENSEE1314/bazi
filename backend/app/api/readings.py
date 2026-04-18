@@ -81,11 +81,12 @@ def profile_calendar(
 @router.get("/profiles/{profile_id}/deep", response_model=DeepBaZiReading)
 def profile_deep(
     profile_id: int,
+    lang: str = Query(default="en", pattern="^(en|zh|ms)$"),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> DeepBaZiReading:
     profile = _owned_profile(db, user, profile_id)
-    return build_deep_bazi(profile.birth_datetime, profile.gender)
+    return build_deep_bazi(profile.birth_datetime, profile.gender, lang=lang)
 
 
 @router.post("/numerology/deep", response_model=DeepNumerologyReading)

@@ -42,7 +42,7 @@ function formatDate(d: Date) {
 }
 
 export function ProfileDetailPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { id } = useParams<{ id: string }>();
   const profileId = Number(id);
 
@@ -65,7 +65,7 @@ export function ProfileDetailPage() {
 
   useEffect(() => {
     if (!profileId) return;
-    Promise.all([api.getProfile(profileId), api.deep(profileId)])
+    Promise.all([api.getProfile(profileId), api.deep(profileId, lang)])
       .then(([p, d]) => {
         setProfile(p);
         setDeep(d);
@@ -76,7 +76,7 @@ export function ProfileDetailPage() {
         }
       })
       .catch((e) => setError(String(e)));
-  }, [profileId]);
+  }, [profileId, lang]);
 
   useEffect(() => {
     if (!profileId) return;

@@ -444,7 +444,8 @@ export const api = {
     request<void>(`/api/profiles/${id}`, { method: "DELETE" }),
 
   bazi: (id: number) => request<BaZi>(`/api/profiles/${id}/bazi`),
-  deep: (id: number) => request<DeepBaZi>(`/api/profiles/${id}/deep`),
+  deep: (id: number, lang?: string) =>
+    request<DeepBaZi>(`/api/profiles/${id}/deep${lang ? `?lang=${lang}` : ""}`),
   daily: (id: number, date?: string) =>
     request<Daily>(`/api/profiles/${id}/daily${date ? `?date=${date}` : ""}`),
   calendar: (id: number, year: number, month: number) =>
