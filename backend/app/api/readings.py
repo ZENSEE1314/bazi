@@ -15,6 +15,8 @@ from ..schemas import (
     CompatibilityReading,
     CompatibilityRequest,
     DailyLuck,
+    DeepBaZiReading,
+    DeepNumerologyReading,
     NumerologyReading,
     NumerologyRequest,
 )
@@ -22,6 +24,8 @@ from ..services.readings import (
     build_bazi_reading,
     build_compatibility,
     build_daily_luck,
+    build_deep_bazi,
+    build_deep_numerology,
     build_numerology_reading,
 )
 
@@ -53,6 +57,24 @@ def profile_daily(
 ) -> DailyLuck:
     profile = _owned_profile(db, user, profile_id)
     return build_daily_luck(profile.birth_datetime, datetime.now())
+
+
+@router.get("/profiles/{profile_id}/deep", response_model=DeepBaZiReading)
+def profile_deep(
+    profile_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DeepBaZiReading:
+    profile = _owned_profile(db, user, profile_id)
+    return build_deep_bazi(profile.birth_datetime, profile.gender)
+
+
+@router.post("/numerology/deep", response_model=DeepNumerologyReading)
+def deep_numerology(payload: NumerologyRequest, user: User = Depends(get_current_user)) -> DeepNumerologyReading:
+    try:
+        return build_deep_numerology(payload.number)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/numerology", response_model=NumerologyReading)

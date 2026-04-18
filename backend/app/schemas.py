@@ -123,3 +123,109 @@ class CompatibilityReading(BaseModel):
     tension: list[str]
     shared_dominant: str | None
     element_blend: dict[str, float]
+
+
+# ----- Deep Reading (rich personal reading) ------------------------------
+
+class HiddenStem(BaseModel):
+    stem: str
+    element: str
+    weight: float
+    ten_god_cn: str
+    ten_god_en: str
+
+
+class DeepPillar(BaseModel):
+    label: str
+    stem: str
+    branch: str
+    stem_element: str
+    branch_element: str
+    pinyin: str
+    sexagenary_index: int
+    nayin_cn: str
+    nayin_en: str
+    stem_ten_god_cn: str | None   # None for Day pillar (Day Master itself)
+    stem_ten_god_en: str | None
+    hidden_stems: list[HiddenStem]
+
+
+class DayMasterAnalysis(BaseModel):
+    element: str
+    stem: str
+    strength_score: float
+    strength_level: str
+    seasonal_influence: str
+    supportive_elements: list[str]
+    draining_elements: list[str]
+    useful_god: str
+    avoid_god: str
+    explanation: str
+
+
+class LuckPillarOut(BaseModel):
+    index: int
+    start_age: int
+    end_age: int
+    stem: str
+    branch: str
+    stem_element: str
+    branch_element: str
+    pinyin: str
+    nayin_en: str
+    stem_ten_god_cn: str
+    stem_ten_god_en: str
+
+
+class AnnualLuckOut(BaseModel):
+    year: int
+    stem: str
+    branch: str
+    stem_element: str
+    branch_element: str
+    stem_ten_god_cn: str
+    stem_ten_god_en: str
+    note: str
+
+
+class RelationItem(BaseModel):
+    kind: str | None = None
+    pillars: list[str] | None = None
+    branches: list[str]
+    transforms_to: str | None = None
+    note: str
+
+
+class DeepBaZiReading(BaseModel):
+    pillars: list[DeepPillar]
+    chart_string: str
+    zodiac: str
+    day_master: DayMasterAnalysis
+    elements: dict[str, float]
+    dominant_element: str
+    weakest_element: str
+    stars: dict[str, list[str]]
+    relations: dict[str, list[RelationItem]]
+    luck_pillars: list[LuckPillarOut]
+    annual_luck: AnnualLuckOut
+    life_areas: dict[str, dict[str, float | list[str]]]
+    personality_notes: list[str]
+
+
+class PairAnalysisItem(BaseModel):
+    a: int
+    b: int
+    category_cn: str
+    category_en: str
+    theme: str
+    auspicious: bool
+
+
+class DeepNumerologyReading(BaseModel):
+    number: str
+    scores: NumerologyReading
+    life_path: int
+    life_path_theme: str
+    pairs: list[PairAnalysisItem]
+    auspicious_pair_count: int
+    inauspicious_pair_count: int
