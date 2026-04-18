@@ -1,22 +1,31 @@
 import { FormEvent, useEffect, useState } from "react";
 import { api, FengShuiReading, Profile } from "../api";
 import { ScoreRing } from "../components/PillarCard";
+import { useI18n } from "../i18n";
 
 const DIRECTIONS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
-const DIR_NAMES: Record<string, string> = {
-  N: "North", NE: "Northeast", E: "East", SE: "Southeast",
-  S: "South", SW: "Southwest", W: "West", NW: "Northwest",
-};
-const ROOMS = [
-  { key: "main_door",  label: "Main door faces" },
-  { key: "bed_head",   label: "Bed head points" },
-  { key: "desk",       label: "Desk faces" },
-  { key: "stove",      label: "Stove sits" },
-  { key: "living_room",label: "Living room faces" },
-  { key: "kids_room",  label: "Kids room faces" },
-];
+
+function useDirNames(t: (k: string) => string) {
+  // Keep compass letters neutral; long names in the UI come from i18n when needed.
+  return {
+    N: t("fs.main_door"), // unused
+  };
+}
+
+function useRooms(t: (k: string) => string) {
+  return [
+    { key: "main_door",  label: t("fs.main_door") },
+    { key: "bed_head",   label: t("fs.bed_head") },
+    { key: "desk",       label: t("fs.desk") },
+    { key: "stove",      label: t("fs.stove") },
+    { key: "living_room",label: t("fs.living_room") },
+    { key: "kids_room",  label: t("fs.kids_room") },
+  ];
+}
 
 export function FengShuiPage() {
+  const { t } = useI18n();
+  const ROOMS = useRooms(t);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [profileId, setProfileId] = useState<number | "">("");
   const [facing, setFacing] = useState<string>("S");
@@ -76,38 +85,34 @@ export function FengShuiPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl">Feng Shui — Home Reading</h1>
-        <p className="text-sm text-muted">
-          Enter your home's main-door facing direction and key room directions.
-          We compare them against your Life Kua (八宅) to tell you what's good,
-          what's bad, and what to change.
-        </p>
+        <h1 className="font-display text-2xl">{t("fs.title")}</h1>
+        <p className="text-sm text-muted">{t("fs.subtitle")}</p>
       </div>
 
       <form onSubmit={onSubmit} className="rounded-2xl border border-ink/10 bg-white p-5 space-y-4">
         <div className="grid sm:grid-cols-2 gap-3">
           <label className="block">
-            <span className="text-xs text-muted">Occupant profile (needs gender)</span>
+            <span className="text-xs text-muted">{t("fs.occupant")}</span>
             <select className="input mt-1" value={profileId}
               onChange={(e) => setProfileId(e.target.value === "" ? "" : Number(e.target.value))} required>
-              <option value="">Select…</option>
+              <option value="">{t("fs.select")}</option>
               {profiles.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </label>
           <label className="block">
-            <span className="text-xs text-muted">House facing direction</span>
+            <span className="text-xs text-muted">{t("fs.house_facing")}</span>
             <select className="input mt-1" value={facing} onChange={(e) => setFacing(e.target.value)} required>
-              {DIRECTIONS.map((d) => <option key={d} value={d}>{d} — {DIR_NAMES[d]}</option>)}
+              {DIRECTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </label>
         </div>
         <div className="grid sm:grid-cols-[1fr_auto] gap-3 items-end">
           <label className="block">
-            <span className="text-xs text-muted">Address (optional)</span>
-            <input className="input mt-1" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, city" />
+            <span className="text-xs text-muted">{t("fs.address")}</span>
+            <input className="input mt-1" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t("fs.address_placeholder")} />
           </label>
           <button type="button" onClick={pickCurrentLocation} className="btn-ghost text-sm">
-            📍 Use my GPS location
+            {t("fs.gps")}
           </button>
         </div>
         {(latitude != null && longitude != null) && (
@@ -117,7 +122,7 @@ export function FengShuiPage() {
         )}
 
         <div>
-          <div className="text-xs uppercase tracking-wider text-muted mb-2">Room directions (optional)</div>
+          <div className="text-xs uppercase tracking-wider text-muted mb-2">{t("fs.rooms")}</div>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
             {ROOMS.map((r) => (
               <label key={r.key} className="block">
@@ -136,7 +141,7 @@ export function FengShuiPage() {
         </div>
 
         <button type="submit" disabled={busy} className="btn-primary">
-          {busy ? "Analyzing…" : "Analyze Home"}
+          {busy ? t("fs.analyzing") : t("fs.analyze")}
         </button>
       </form>
 
@@ -147,24 +152,24 @@ export function FengShuiPage() {
           <section className="rounded-2xl border border-ink/10 bg-white p-5">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <div className="text-xs uppercase tracking-wider text-muted">Overall</div>
+                <div className="text-xs uppercase tracking-wider text-muted">{t("fs.overall")}</div>
                 <div className="font-display text-xl mt-1">{result.summary}</div>
                 <div className="mt-2 text-sm">
-                  Your Kua: <b>{result.life_kua_number}</b> ({result.life_kua_group} group) ·
-                  House sits {result.house_sitting} ({result.house_group} group) ·
-                  {result.person_house_match ? <span className="chip element-wood ml-1">MATCH</span> : <span className="chip element-fire ml-1">MISMATCH</span>}
+                  {t("fs.your_kua")}: <b>{result.life_kua_number}</b> ({result.life_kua_group} {t("fs.group")}) ·
+                  {t("fs.house_sits")} {result.house_sitting} ({result.house_group} {t("fs.group")}) ·
+                  {result.person_house_match ? <span className="chip element-wood ml-1">{t("fs.match")}</span> : <span className="chip element-fire ml-1">{t("fs.mismatch")}</span>}
                 </div>
                 <p className="text-sm text-muted mt-2">{result.match_note}</p>
               </div>
-              <ScoreRing score={result.overall_score} label="Score" />
+              <ScoreRing score={result.overall_score} label={t("fs.score")} />
             </div>
           </section>
 
           <section className="rounded-2xl border border-ink/10 bg-white p-5">
-            <div className="text-xs uppercase tracking-wider text-muted mb-2">Your Directions</div>
+            <div className="text-xs uppercase tracking-wider text-muted mb-2">{t("fs.your_dirs")}</div>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <div className="text-sm font-medium text-wood mb-1">✓ Lucky</div>
+                <div className="text-sm font-medium text-wood mb-1">✓ {t("detail.lucky")}</div>
                 <ul className="text-sm space-y-1">
                   {result.lucky_directions.map((d) => (
                     <li key={d.category_key}>
@@ -175,7 +180,7 @@ export function FengShuiPage() {
                 </ul>
               </div>
               <div>
-                <div className="text-sm font-medium text-fire mb-1">✗ Unlucky</div>
+                <div className="text-sm font-medium text-fire mb-1">✗ {t("detail.unlucky")}</div>
                 <ul className="text-sm space-y-1">
                   {result.unlucky_directions.map((d) => (
                     <li key={d.category_key}>
@@ -190,7 +195,7 @@ export function FengShuiPage() {
 
           {result.room_verdicts.length > 0 && (
             <section className="rounded-2xl border border-ink/10 bg-white p-5">
-              <div className="text-xs uppercase tracking-wider text-muted mb-3">Room Verdicts</div>
+              <div className="text-xs uppercase tracking-wider text-muted mb-3">{t("fs.room_verdicts")}</div>
               <div className="space-y-2">
                 {result.room_verdicts.map((rv) => (
                   <div key={rv.room} className={`rounded-xl border p-3 ${
@@ -215,7 +220,7 @@ export function FengShuiPage() {
           )}
 
           <section className="rounded-2xl border border-ink/10 bg-white p-5">
-            <div className="text-xs uppercase tracking-wider text-muted mb-2">Recommendations</div>
+            <div className="text-xs uppercase tracking-wider text-muted mb-2">{t("fs.recommendations")}</div>
             <ul className="list-disc pl-5 text-sm space-y-1">
               {result.recommendations.map((r, i) => <li key={i}>{r}</li>)}
             </ul>

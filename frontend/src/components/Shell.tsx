@@ -90,7 +90,7 @@ export function Shell() {
         </div>
       </main>
       <footer className="border-t border-ink/10 py-4 text-center text-xs text-muted">
-        Ba Zi • Numerology • Compatibility — not medical, financial, or legal advice.
+        {t("common.footer")}
       </footer>
     </div>
   );

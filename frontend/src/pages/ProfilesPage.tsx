@@ -2,10 +2,12 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, Profile } from "../api";
 import { useAuth } from "../auth";
+import { useI18n } from "../i18n";
 
 const FREE_LIMIT = 3;
 
 export function ProfilesPage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,12 +25,10 @@ export function ProfilesPage() {
     }
   }
 
-  useEffect(() => {
-    refresh();
-  }, []);
+  useEffect(() => { refresh(); }, []);
 
   async function onDelete(id: number) {
-    if (!confirm("Delete this profile? This cannot be undone.")) return;
+    if (!confirm(t("profiles.delete_confirm"))) return;
     await api.deleteProfile(id);
     refresh();
   }
@@ -39,36 +39,34 @@ export function ProfilesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-display text-2xl">Profiles Vault</h1>
+          <h1 className="font-display text-2xl">{t("profiles.title")}</h1>
           <div className="text-sm text-muted">
-            {profiles.length}{user?.is_premium ? "" : ` / ${FREE_LIMIT}`} profiles
-            {!user?.is_premium && atLimit && " · free tier full"}
+            {profiles.length}{user?.is_premium ? "" : ` / ${FREE_LIMIT}`}
+            {!user?.is_premium && atLimit && ` · ${t("profiles.limit_reached")}`}
           </div>
         </div>
         <button
           onClick={() => setShowForm((v) => !v)}
           disabled={atLimit}
           className="btn-primary disabled:opacity-50"
-          title={atLimit ? "Free tier full. Upgrade for unlimited." : ""}
         >
-          {showForm ? "Cancel" : "+ New profile"}
+          {showForm ? t("common.cancel") : t("profiles.new")}
         </button>
       </div>
 
       {atLimit && (
         <div className="rounded-xl border border-earth/40 bg-earth-soft p-4 text-sm">
-          You've hit the <b>{FREE_LIMIT}-profile free limit</b>. Upgrade to Premium for unlimited
-          profiles, yearly reports, and advanced lucky-number averaging.
+          {t("profiles.limit_hint", { limit: FREE_LIMIT })}
         </div>
       )}
 
       {showForm && <CreateForm onCreated={() => { setShowForm(false); refresh(); }} />}
 
       {loading ? (
-        <div className="text-muted">Loading…</div>
+        <div className="text-muted">{t("common.loading")}</div>
       ) : profiles.length === 0 ? (
         <div className="rounded-xl border border-dashed border-ink/20 p-6 text-center text-muted">
-          No profiles yet. Create one above.
+          {t("profiles.empty")}
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -79,10 +77,10 @@ export function ProfilesPage() {
                   <Link to={`/profiles/${p.id}`} className="font-display text-lg hover:underline">
                     {p.name}
                   </Link>
-                  {p.is_main && <span className="ml-2 chip element-fire">MAIN</span>}
+                  {p.is_main && <span className="ml-2 chip element-fire">{t("profiles.main")}</span>}
                 </div>
                 <button onClick={() => onDelete(p.id)} className="text-xs text-muted hover:text-fire">
-                  delete
+                  {t("profiles.delete")}
                 </button>
               </div>
               <div className="text-xs text-muted mt-1">
@@ -92,7 +90,7 @@ export function ProfilesPage() {
                 <div className="text-xs text-muted mt-0.5">{p.relationship_label}</div>
               )}
               <Link to={`/profiles/${p.id}`} className="btn-ghost text-xs mt-3 self-start">
-                View chart →
+                {t("profiles.view_chart")}
               </Link>
             </div>
           ))}
@@ -105,6 +103,7 @@ export function ProfilesPage() {
 }
 
 function CreateForm({ onCreated }: { onCreated: () => void }) {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [birth, setBirth] = useState("");
   const [label, setLabel] = useState("");
@@ -141,42 +140,42 @@ function CreateForm({ onCreated }: { onCreated: () => void }) {
     <form onSubmit={onSubmit} className="rounded-xl border border-ink/10 bg-white p-4 space-y-3">
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="block">
-          <span className="text-xs text-muted">Name</span>
+          <span className="text-xs text-muted">{t("profiles.name")}</span>
           <input className="input mt-1" value={name} onChange={(e) => setName(e.target.value)} required />
         </label>
         <label className="block">
-          <span className="text-xs text-muted">Birth date & time</span>
+          <span className="text-xs text-muted">{t("profiles.birth_dt")}</span>
           <input type="datetime-local" className="input mt-1" value={birth} onChange={(e) => setBirth(e.target.value)} required />
         </label>
         <label className="block">
-          <span className="text-xs text-muted">Relationship (self, spouse…)</span>
+          <span className="text-xs text-muted">{t("profiles.relationship")}</span>
           <input className="input mt-1" value={label} onChange={(e) => setLabel(e.target.value)} />
         </label>
         <label className="block">
-          <span className="text-xs text-muted">Birth location</span>
+          <span className="text-xs text-muted">{t("profiles.location")}</span>
           <input className="input mt-1" value={location} onChange={(e) => setLocation(e.target.value)} />
         </label>
         <label className="block">
-          <span className="text-xs text-muted">Gender (optional)</span>
+          <span className="text-xs text-muted">{t("profiles.gender")}</span>
           <select className="input mt-1" value={gender} onChange={(e) => setGender(e.target.value)}>
             <option value="">—</option>
-            <option value="female">female</option>
-            <option value="male">male</option>
-            <option value="other">other</option>
+            <option value="female">{t("profiles.gender_female")}</option>
+            <option value="male">{t("profiles.gender_male")}</option>
+            <option value="other">{t("profiles.gender_other")}</option>
           </select>
         </label>
         <label className="flex items-center gap-2 text-sm mt-6">
           <input type="checkbox" checked={isMain} onChange={(e) => setIsMain(e.target.checked)} />
-          Set as main profile
+          {t("profiles.set_main")}
         </label>
       </div>
       <label className="block">
-        <span className="text-xs text-muted">Notes</span>
+        <span className="text-xs text-muted">{t("profiles.notes")}</span>
         <textarea className="input mt-1" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
       </label>
       {error && <div className="text-xs text-fire">{error}</div>}
       <button type="submit" disabled={busy} className="btn-primary">
-        {busy ? "Saving…" : "Save profile"}
+        {busy ? t("common.saving") : t("profiles.save")}
       </button>
     </form>
   );

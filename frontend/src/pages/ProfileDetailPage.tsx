@@ -94,10 +94,10 @@ export function ProfileDetailPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-3 flex-wrap">
         <Link to="/profiles" className="text-sm text-muted hover:underline">
-          ← Vault
+          {t("detail.back")}
         </Link>
         <h1 className="font-display text-2xl">{profile.name}</h1>
-        {profile.is_main && <span className="chip element-fire">MAIN</span>}
+        {profile.is_main && <span className="chip element-fire">{t("profiles.main")}</span>}
         <span className="text-sm text-muted">
           {new Date(profile.birth_datetime).toLocaleString()}
           {profile.birth_location ? ` · ${profile.birth_location}` : ""}
@@ -109,27 +109,27 @@ export function ProfileDetailPage() {
       <section className="rounded-2xl border border-ink/10 bg-white p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted">Four Pillars</div>
+            <div className="text-xs uppercase tracking-wider text-muted">{t("detail.four_pillars")}</div>
             <div className="font-display text-3xl mt-1">{deep.chart_string}</div>
             <div className="mt-2 text-sm">
-              Day Master: <b>{deep.day_master.stem}</b> ({deep.day_master.element}) ·
-              Zodiac: <b>{deep.zodiac}</b> · Dominant: <b>{deep.dominant_element}</b> ·
-              Weakest: <b>{deep.weakest_element}</b>
+              {t("detail.day_master")}: <b>{deep.day_master.stem}</b> ({deep.day_master.element}) ·
+              {t("detail.zodiac")}: <b>{deep.zodiac}</b> · {t("detail.dominant")}: <b>{deep.dominant_element}</b> ·
+              {t("detail.weakest")}: <b>{deep.weakest_element}</b>
             </div>
             <div className="mt-1 text-sm text-muted">
-              Strength: <span className="font-medium">{deep.day_master.strength_level}</span> ({deep.day_master.strength_score.toFixed(2)}) ·
-              Useful God: <span className="font-medium">{deep.day_master.useful_god}</span> ·
-              Avoid: <span className="font-medium">{deep.day_master.avoid_god}</span>
+              {t("detail.strength")}: <span className="font-medium">{deep.day_master.strength_level}</span> ({deep.day_master.strength_score.toFixed(2)}) ·
+              {t("detail.useful_god")}: <span className="font-medium">{deep.day_master.useful_god}</span> ·
+              {t("detail.avoid_god")}: <span className="font-medium">{deep.day_master.avoid_god}</span>
             </div>
           </div>
           {deep.life_kua && (
             <div className="rounded-xl border border-ink/10 p-3 min-w-[180px]">
-              <div className="text-xs uppercase tracking-wider text-muted">Life Kua</div>
+              <div className="text-xs uppercase tracking-wider text-muted">{t("detail.life_kua")}</div>
               <div className="font-display text-2xl">{deep.life_kua.number} · {deep.life_kua.trigram_cn}</div>
               <div className="text-sm text-muted">
-                {deep.life_kua.trigram_pinyin} · {deep.life_kua.element} · {deep.life_kua.group} Group
+                {deep.life_kua.trigram_pinyin} · {deep.life_kua.element} · {deep.life_kua.group === "East" ? t("detail.group_east") : t("detail.group_west")}
               </div>
-              <div className="text-xs text-muted mt-1">Seat: {deep.life_kua.seated_direction}</div>
+              <div className="text-xs text-muted mt-1">{t("detail.seat")}: {deep.life_kua.seated_direction}</div>
             </div>
           )}
         </div>
@@ -149,17 +149,17 @@ export function ProfileDetailPage() {
               </div>
               <div className="mt-2 text-xs text-muted">
                 {p.stem_ten_god_en ? (
-                  <span>Stem: <b>{p.stem_ten_god_cn}</b> {p.stem_ten_god_en}</span>
+                  <span>{t("detail.stem")}: <b>{p.stem_ten_god_cn}</b> {p.stem_ten_god_en}</span>
                 ) : (
-                  <span><b>Day Master</b></span>
+                  <span><b>{t("detail.day_master_word")}</b></span>
                 )}
               </div>
               <div className="mt-1 text-[11px] text-muted italic">
-                Nayin: {p.nayin_cn} ({p.nayin_en})
+                {t("detail.nayin")}: {p.nayin_cn} ({p.nayin_en})
               </div>
               {p.hidden_stems.length > 0 && (
                 <div className="mt-2 text-[11px] text-muted border-t border-ink/5 pt-1 w-full">
-                  <div className="font-semibold">Hidden:</div>
+                  <div className="font-semibold">{t("detail.hidden")}:</div>
                   {p.hidden_stems.map((h, i) => (
                     <div key={i}>
                       {h.stem} ({h.element}) · {h.ten_god_cn} {h.ten_god_en} · {h.weight.toFixed(1)}
@@ -174,7 +174,7 @@ export function ProfileDetailPage() {
         {/* Five Factors + Raw Elements */}
         <div className="mt-6 grid md:grid-cols-2 gap-5">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted mb-2">Five Factors (10-God grouping)</div>
+            <div className="text-xs uppercase tracking-wider text-muted mb-2">{t("detail.five_factors")}</div>
             <div className="space-y-1">
               {deep.five_factors.map((f) => (
                 <div key={f.key} className="flex items-center gap-2 text-sm">
@@ -192,7 +192,7 @@ export function ProfileDetailPage() {
             </div>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted mb-2">Five Elements Raw</div>
+            <div className="text-xs uppercase tracking-wider text-muted mb-2">{t("detail.five_elements_raw")}</div>
             <ElementBar elements={deep.elements} />
           </div>
         </div>
@@ -200,14 +200,14 @@ export function ProfileDetailPage() {
 
       {/* --- Day Master Verdict ------------------------------------------- */}
       <section className="rounded-2xl border border-ink/10 bg-white p-5">
-        <div className="text-xs uppercase tracking-wider text-muted">Day Master Verdict</div>
+        <div className="text-xs uppercase tracking-wider text-muted">{t("detail.day_master_verdict")}</div>
         <p className="mt-2 text-sm">{deep.day_master.seasonal_influence}</p>
         <p className="mt-2 text-sm">{deep.day_master.explanation}</p>
       </section>
 
       {/* --- Stars --------------------------------------------------------- */}
       <section className="rounded-2xl border border-ink/10 bg-white p-5">
-        <div className="text-xs uppercase tracking-wider text-muted mb-3">Auxiliary Stars (神煞)</div>
+        <div className="text-xs uppercase tracking-wider text-muted mb-3">{t("detail.aux_stars")}</div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {Object.entries(deep.stars).map(([key, info]) => {
             const lbl = starLabels[key] || { cn: key, en: key };
@@ -219,13 +219,13 @@ export function ProfileDetailPage() {
               >
                 <div className="text-sm font-medium">{lbl.cn} {lbl.en}</div>
                 <div className="text-xs text-muted mt-1">
-                  Trigger branch: <b>{info.trigger_branch ?? "—"}</b>
+                  {t("detail.star_trigger")}: <b>{info.trigger_branch ?? "—"}</b>
                 </div>
                 <div className="text-xs mt-1">
                   {active ? (
-                    <>Present in: {info.present_in.join(", ")}</>
+                    <>{t("detail.star_present")}: {info.present_in.join(", ")}</>
                   ) : (
-                    <span className="text-muted">Not triggered in natal chart</span>
+                    <span className="text-muted">{t("detail.star_not_present")}</span>
                   )}
                 </div>
               </div>
@@ -238,11 +238,11 @@ export function ProfileDetailPage() {
       {deep.life_kua && (
         <section className="rounded-2xl border border-ink/10 bg-white p-5">
           <div className="text-xs uppercase tracking-wider text-muted mb-3">
-            8 Mansions — directions for Life Kua {deep.life_kua.number} ({deep.life_kua.trigram_cn})
+            {t("detail.eight_mansions")} {deep.life_kua.number} ({deep.life_kua.trigram_cn})
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <div className="text-sm font-medium text-wood mb-2">✓ Lucky</div>
+              <div className="text-sm font-medium text-wood mb-2">✓ {t("detail.lucky")}</div>
               <div className="space-y-1">
                 {deep.lucky_directions.map((d) => (
                   <div key={d.category_key} className="flex items-start gap-2 text-sm">
@@ -256,7 +256,7 @@ export function ProfileDetailPage() {
               </div>
             </div>
             <div>
-              <div className="text-sm font-medium text-fire mb-2">✗ Unlucky</div>
+              <div className="text-sm font-medium text-fire mb-2">✗ {t("detail.unlucky")}</div>
               <div className="space-y-1">
                 {deep.unlucky_directions.map((d) => (
                   <div key={d.category_key} className="flex items-start gap-2 text-sm">
@@ -275,7 +275,7 @@ export function ProfileDetailPage() {
 
       {/* --- Life areas --------------------------------------------------- */}
       <section className="rounded-2xl border border-ink/10 bg-white p-5">
-        <div className="text-xs uppercase tracking-wider text-muted mb-3">Life Areas (Ten-God presence)</div>
+        <div className="text-xs uppercase tracking-wider text-muted mb-3">{t("detail.life_areas")}</div>
         <div className="grid sm:grid-cols-5 gap-3">
           {Object.entries(deep.life_areas).map(([area, v]) => (
             <div key={area} className="rounded-xl border border-ink/10 p-3">
@@ -357,7 +357,7 @@ export function ProfileDetailPage() {
       {/* --- Career / Wealth / Love / Health ------------------------------ */}
       <section className="grid md:grid-cols-2 gap-4">
         <div className="rounded-2xl border border-ink/10 bg-white p-5">
-          <div className="text-xs uppercase tracking-wider text-muted mb-2">Career Directions</div>
+          <div className="text-xs uppercase tracking-wider text-muted mb-2">{t("detail.career")}</div>
           <div className="flex flex-wrap gap-1.5">
             {deep.career_paths.map((c) => (
               <span key={c} className="chip element-metal">{c}</span>
@@ -365,19 +365,19 @@ export function ProfileDetailPage() {
           </div>
         </div>
         <div className="rounded-2xl border border-ink/10 bg-white p-5">
-          <div className="text-xs uppercase tracking-wider text-muted mb-2">Wealth Strategy</div>
+          <div className="text-xs uppercase tracking-wider text-muted mb-2">{t("detail.wealth_strategy")}</div>
           <ul className="list-disc pl-5 text-sm space-y-1">
             {deep.wealth_strategy.map((w, i) => <li key={i}>{w}</li>)}
           </ul>
         </div>
         <div className="rounded-2xl border border-ink/10 bg-white p-5">
-          <div className="text-xs uppercase tracking-wider text-muted mb-2">Love Outlook</div>
+          <div className="text-xs uppercase tracking-wider text-muted mb-2">{t("detail.love_outlook")}</div>
           <ul className="list-disc pl-5 text-sm space-y-1">
             {deep.love_outlook.map((w, i) => <li key={i}>{w}</li>)}
           </ul>
         </div>
         <div className="rounded-2xl border border-ink/10 bg-white p-5">
-          <div className="text-xs uppercase tracking-wider text-muted mb-2">Health Watch</div>
+          <div className="text-xs uppercase tracking-wider text-muted mb-2">{t("detail.health_watch")}</div>
           <ul className="list-disc pl-5 text-sm space-y-1">
             {deep.health_watch.map((w, i) => <li key={i}>{w}</li>)}
           </ul>
@@ -387,7 +387,7 @@ export function ProfileDetailPage() {
       {/* --- Relations ---------------------------------------------------- */}
       {Object.values(deep.relations).some((arr) => arr.length > 0) && (
         <section className="rounded-2xl border border-ink/10 bg-white p-5">
-          <div className="text-xs uppercase tracking-wider text-muted mb-3">Branch Relationships</div>
+          <div className="text-xs uppercase tracking-wider text-muted mb-3">{t("detail.branch_relations")}</div>
           <div className="space-y-3">
             {Object.entries(deep.relations).map(([kind, items]) =>
               items.length > 0 ? (
@@ -411,24 +411,24 @@ export function ProfileDetailPage() {
 
       {/* --- Annual + Luck Pillars --------------------------------------- */}
       <section className="rounded-2xl border border-ink/10 bg-white p-5">
-        <div className="text-xs uppercase tracking-wider text-muted mb-2">Annual Luck · {deep.annual_luck.year}</div>
+        <div className="text-xs uppercase tracking-wider text-muted mb-2">{t("detail.annual_luck")} · {deep.annual_luck.year}</div>
         <div className="font-display text-2xl">
           {deep.annual_luck.stem}{deep.annual_luck.branch}
           <span className="ml-2 chip element-wood">{deep.annual_luck.stem_ten_god_cn} {deep.annual_luck.stem_ten_god_en}</span>
         </div>
         <p className="text-sm text-muted mt-2">{deep.annual_luck.note}</p>
 
-        <div className="text-xs uppercase tracking-wider text-muted mt-5 mb-2">10-Year Luck Pillars (大运)</div>
+        <div className="text-xs uppercase tracking-wider text-muted mt-5 mb-2">{t("detail.ten_year_luck")}</div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-muted text-xs uppercase">
-                <th className="text-left py-1">Age</th>
-                <th className="text-left py-1">Pillar</th>
-                <th className="text-left py-1">Pinyin</th>
-                <th className="text-left py-1">Ten God</th>
-                <th className="text-left py-1">Elements</th>
-                <th className="text-left py-1">Nayin</th>
+                <th className="text-left py-1">{t("detail.age")}</th>
+                <th className="text-left py-1">{t("detail.pillar")}</th>
+                <th className="text-left py-1">{t("detail.pinyin")}</th>
+                <th className="text-left py-1">{t("detail.ten_god")}</th>
+                <th className="text-left py-1">{t("detail.elements")}</th>
+                <th className="text-left py-1">{t("detail.nayin")}</th>
               </tr>
             </thead>
             <tbody>
@@ -454,7 +454,7 @@ export function ProfileDetailPage() {
       <section className="rounded-2xl border border-ink/10 bg-white p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted">Daily Reading</div>
+            <div className="text-xs uppercase tracking-wider text-muted">{t("detail.daily_reading")}</div>
             <div className="mt-1 flex items-center gap-2">
               <input
                 type="date"
@@ -463,11 +463,11 @@ export function ProfileDetailPage() {
                 className="input w-auto"
               />
               <button className="btn-ghost text-xs" onClick={() => setSelectedDate(formatDate(new Date()))}>
-                Today
+                {t("common.today")}
               </button>
             </div>
           </div>
-          {daily && <ScoreRing score={daily.score} label="Luck" />}
+          {daily && <ScoreRing score={daily.score} label={t("dash.luck")} />}
         </div>
         {daily && (
           <>
@@ -477,7 +477,7 @@ export function ProfileDetailPage() {
             <p className="mt-1 text-sm">{daily.summary}</p>
             {daily.supportive_elements.length > 0 && (
               <div className="mt-3">
-                <div className="text-xs uppercase tracking-wider text-wood mb-1">Supportive</div>
+                <div className="text-xs uppercase tracking-wider text-wood mb-1">{t("dash.supportive")}</div>
                 <ul className="list-disc pl-5 text-sm space-y-0.5">
                   {daily.supportive_elements.map((s, i) => <li key={i}>{s}</li>)}
                 </ul>
@@ -485,7 +485,7 @@ export function ProfileDetailPage() {
             )}
             {daily.clashing_elements.length > 0 && (
               <div className="mt-3">
-                <div className="text-xs uppercase tracking-wider text-fire mb-1">Friction</div>
+                <div className="text-xs uppercase tracking-wider text-fire mb-1">{t("dash.friction")}</div>
                 <ul className="list-disc pl-5 text-sm space-y-0.5">
                   {daily.clashing_elements.map((s, i) => <li key={i}>{s}</li>)}
                 </ul>
@@ -499,7 +499,7 @@ export function ProfileDetailPage() {
       <section className="rounded-2xl border border-ink/10 bg-white p-5">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted">Calendar — Good / Bad Days</div>
+            <div className="text-xs uppercase tracking-wider text-muted">{t("detail.calendar_title")}</div>
             <div className="font-display text-xl">
               {new Date(calMonth.year, calMonth.month - 1, 1).toLocaleString("default", {
                 month: "long",
@@ -524,7 +524,7 @@ export function ProfileDetailPage() {
                 setCalMonth({ year: now.getFullYear(), month: now.getMonth() + 1 });
               }}
             >
-              This month
+              {t("detail.this_month")}
             </button>
             <button
               className="btn-ghost text-xs"
@@ -545,11 +545,11 @@ export function ProfileDetailPage() {
             </div>
             <CalendarGrid days={calendar} year={calMonth.year} month={calMonth.month} onPick={setSelectedDate} />
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              <span className={`chip ${dayLabelColor.excellent}`}>★ excellent 75+</span>
-              <span className={`chip ${dayLabelColor.good}`}>+ good 60–74</span>
-              <span className={`chip ${dayLabelColor.neutral}`}>· neutral 45–59</span>
-              <span className={`chip ${dayLabelColor.caution}`}>~ caution 30–44</span>
-              <span className={`chip ${dayLabelColor.difficult}`}>✗ difficult &lt;30</span>
+              <span className={`chip ${dayLabelColor.excellent}`}>{t("detail.legend_excellent")}</span>
+              <span className={`chip ${dayLabelColor.good}`}>{t("detail.legend_good")}</span>
+              <span className={`chip ${dayLabelColor.neutral}`}>{t("detail.legend_neutral")}</span>
+              <span className={`chip ${dayLabelColor.caution}`}>{t("detail.legend_caution")}</span>
+              <span className={`chip ${dayLabelColor.difficult}`}>{t("detail.legend_difficult")}</span>
             </div>
           </>
         ) : (
@@ -559,7 +559,7 @@ export function ProfileDetailPage() {
 
       {/* --- Personality --------------------------------------------------- */}
       <section className="rounded-2xl border border-ink/10 bg-white p-5">
-        <div className="text-xs uppercase tracking-wider text-muted mb-2">Personality Notes</div>
+        <div className="text-xs uppercase tracking-wider text-muted mb-2">{t("detail.personality")}</div>
         <ul className="list-disc pl-5 text-sm space-y-1">
           {deep.personality_notes.map((n, i) => <li key={i}>{n}</li>)}
         </ul>
