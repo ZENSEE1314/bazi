@@ -2,6 +2,13 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { api, ChatMessage, ChatSession, Profile } from "../api";
 import { useI18n } from "../i18n";
 
+type PendingMessage = {
+  id: string;            // client-generated id (negative/string to avoid int collision)
+  role: "user";
+  content: string;
+  created_at: string;
+};
+
 export function ChatPage() {
   const { t, lang } = useI18n();
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -9,10 +16,13 @@ export function ChatPage() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [pending, setPending] = useState<PendingMessage | null>(null);
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
     api.listProfiles().then((list) => {
@@ -26,39 +36,67 @@ export function ChatPage() {
   useEffect(() => {
     if (sessionId) api.chatMessages(sessionId).then(setMessages);
     else setMessages([]);
+    setPending(null);
   }, [sessionId]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+  }, [messages, pending, busy]);
+
+  useEffect(() => {
+    if (busy) {
+      setElapsed(0);
+      timerRef.current = window.setInterval(() => setElapsed((e) => e + 1), 1000);
+      return () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+      };
+    }
+  }, [busy]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!question.trim()) return;
+    const q = question.trim();
+    if (!q) return;
+
+    // Optimistic UI: show the user's message immediately.
+    const optimistic: PendingMessage = {
+      id: `pending-${Date.now()}`,
+      role: "user",
+      content: q,
+      created_at: new Date().toISOString(),
+    };
+    setPending(optimistic);
+    setQuestion("");
     setBusy(true);
     setError(null);
+
     try {
       const resp = await api.chatSend(
-        question.trim(),
+        q,
         sessionId ?? undefined,
         profileId === "" ? undefined : Number(profileId),
         lang,
       );
       if (!sessionId) {
         setSessionId(resp.session.id);
-        setSessions([resp.session, ...sessions]);
+        setSessions((prev) => [resp.session, ...prev]);
       }
       setMessages((prev) => [...prev, resp.user_message, resp.assistant_message]);
-      setQuestion("");
+      setPending(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed");
+      setPending(null);
+      setQuestion(q); // restore the input so they can retry
     } finally {
       setBusy(false);
     }
   }
 
   async function deleteSession(id: number) {
-    if (!confirm("Delete this chat?")) return;
+    if (!confirm(t("chat.delete_confirm"))) return;
     await api.chatDeleteSession(id);
     setSessions(sessions.filter((s) => s.id !== id));
     if (sessionId === id) {
@@ -66,6 +104,8 @@ export function ChatPage() {
       setMessages([]);
     }
   }
+
+  const hasAnyContent = messages.length > 0 || pending;
 
   return (
     <div className="space-y-4">
@@ -91,7 +131,7 @@ export function ChatPage() {
         <aside className="space-y-2">
           <button
             className="btn-ghost w-full text-sm"
-            onClick={() => { setSessionId(null); setMessages([]); }}
+            onClick={() => { setSessionId(null); setMessages([]); setPending(null); }}
           >
             {t("chat.new_chat")}
           </button>
@@ -121,7 +161,7 @@ export function ChatPage() {
 
         <section className="rounded-2xl border border-ink/10 bg-white flex flex-col min-h-[500px]">
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.length === 0 && (
+            {!hasAnyContent && !busy && (
               <div className="h-full flex items-center justify-center text-center text-sm text-muted">
                 <div>
                   <div className="font-display text-3xl mb-2">八字</div>
@@ -129,6 +169,7 @@ export function ChatPage() {
                 </div>
               </div>
             )}
+
             {messages.map((m) => (
               <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`rounded-2xl px-4 py-2 max-w-[80%] text-sm whitespace-pre-wrap ${
@@ -138,15 +179,41 @@ export function ChatPage() {
                 </div>
               </div>
             ))}
+
+            {pending && (
+              <div className="flex justify-end">
+                <div className="rounded-2xl px-4 py-2 max-w-[80%] text-sm whitespace-pre-wrap bg-ink text-parchment opacity-80">
+                  {pending.content}
+                </div>
+              </div>
+            )}
+
             {busy && (
               <div className="flex justify-start">
-                <div className="rounded-2xl px-4 py-2 bg-parchment border border-ink/10 text-sm text-muted">
-                  {t("chat.consulting")}
+                <div className="rounded-2xl px-4 py-3 bg-parchment border border-ink/10 text-sm text-muted max-w-[80%] space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex gap-1" aria-hidden>
+                      <span className="w-1.5 h-1.5 rounded-full bg-ink/40 animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-ink/40 animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-ink/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </span>
+                    <span>{t("chat.consulting")}</span>
+                    <span className="text-[11px] text-ink/50">· {t("chat.elapsed")} {elapsed}s</span>
+                  </div>
+                  {elapsed >= 10 && (
+                    <div className="text-[11px] text-ink/50">{t("chat.consulting_cold")}</div>
+                  )}
                 </div>
               </div>
             )}
           </div>
-          {error && <div className="text-fire text-sm px-4 py-2 border-t border-fire/30 bg-fire-soft">{error}</div>}
+
+          {error && (
+            <div className="text-fire text-sm px-4 py-2 border-t border-fire/30 bg-fire-soft">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={onSubmit} className="flex gap-2 border-t border-ink/10 p-3">
             <input
               className="input flex-1"

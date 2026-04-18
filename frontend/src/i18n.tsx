@@ -283,6 +283,8 @@ const en: Record<string, string> = {
   "chat.new_chat": "+ New chat",
   "chat.recent": "Recent",
   "chat.consulting": "The reader is consulting the chart…",
+  "chat.consulting_cold": "First response of the session takes 30–90 seconds while the model loads.",
+  "chat.elapsed": "Elapsed",
   "chat.ask_placeholder":
     "How is my career luck in 2026? What should I change in my bedroom?",
   "chat.ask": "Ask",
@@ -555,6 +557,8 @@ const zh: Record<string, string> = {
   "chat.new_chat": "+ 新对话",
   "chat.recent": "最近",
   "chat.consulting": "正在翻盘推算……",
+  "chat.consulting_cold": "本次会话的第一次回复需 30–90 秒（模型加载中）。",
+  "chat.elapsed": "已用时",
   "chat.ask_placeholder": "2026年我的事业运如何？卧室该怎么调整？",
   "chat.ask": "问",
   "chat.empty": "请提问——事业、爱情、财运、择日、风水。",
@@ -828,6 +832,8 @@ const ms: Record<string, string> = {
   "chat.new_chat": "+ Chat baru",
   "chat.recent": "Terkini",
   "chat.consulting": "Sifu sedang menyemak carta…",
+  "chat.consulting_cold": "Jawapan pertama mengambil 30–90 saat semasa model dimuatkan.",
+  "chat.elapsed": "Masa berlalu",
   "chat.ask_placeholder":
     "Bagaimana nasib kerjaya saya 2026? Apa perlu diubah dalam bilik tidur?",
   "chat.ask": "Tanya",
