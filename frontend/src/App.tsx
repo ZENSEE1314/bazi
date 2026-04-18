@@ -7,6 +7,9 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { ProfilesPage } from "./pages/ProfilesPage";
 import { ProfileDetailPage } from "./pages/ProfileDetailPage";
 import { NumerologyPage } from "./pages/NumerologyPage";
+import { NamePage } from "./pages/NamePage";
+import { FengShuiPage } from "./pages/FengShuiPage";
+import { ChatPage } from "./pages/ChatPage";
 import { CompatibilityPage } from "./pages/CompatibilityPage";
 
 function Private({ children }: { children: JSX.Element }) {
@@ -46,6 +49,9 @@ export default function App() {
           <Route path="/profiles" element={<ProfilesPage />} />
           <Route path="/profiles/:id" element={<ProfileDetailPage />} />
           <Route path="/numerology" element={<NumerologyPage />} />
+          <Route path="/name" element={<NamePage />} />
+          <Route path="/fengshui" element={<FengShuiPage />} />
+          <Route path="/chat" element={<ChatPage />} />
           <Route path="/compatibility" element={<CompatibilityPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -3,9 +3,12 @@ import { useAuth } from "../auth";
 
 const links = [
   { to: "/", label: "Dashboard", end: true },
-  { to: "/profiles", label: "Profiles Vault" },
-  { to: "/numerology", label: "Number Check" },
+  { to: "/profiles", label: "Profiles" },
+  { to: "/numerology", label: "Numbers" },
+  { to: "/name", label: "Name" },
+  { to: "/fengshui", label: "Feng Shui" },
   { to: "/compatibility", label: "Compatibility" },
+  { to: "/chat", label: "Ask Reader" },
 ];
 
 export function Shell() {

@@ -48,3 +48,39 @@ class Profile(Base):
     )
 
     owner: Mapped[User] = relationship(back_populates="profiles")
+
+
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    profile_id: Mapped[int | None] = mapped_column(
+        ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True
+    )
+    title: Mapped[str] = mapped_column(String(160), default="New chat")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    messages: Mapped[list["ChatMessage"]] = relationship(
+        back_populates="session", cascade="all, delete-orphan", order_by="ChatMessage.created_at"
+    )
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    session_id: Mapped[int] = mapped_column(
+        ForeignKey("chat_sessions.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    role: Mapped[str] = mapped_column(String(12), nullable=False)  # user / assistant
+    content: Mapped[str] = mapped_column(String(8000), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    session: Mapped[ChatSession] = relationship(back_populates="messages")

@@ -300,6 +300,117 @@ class DeepCompatibility(BaseModel):
     tension: list[str]
 
 
+# ----- Chinese name reading ----------------------------------------------
+
+class CharStroke(BaseModel):
+    char: str
+    strokes: int
+
+
+class NameGrid(BaseModel):
+    number: int
+    en: str
+    quality: str
+    theme: str
+
+
+class ChineseNameGridsOut(BaseModel):
+    heaven: NameGrid
+    person: NameGrid
+    earth: NameGrid
+    total: NameGrid
+    outer: NameGrid
+
+
+class ChineseNameRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=16)
+    surname_length: int | None = None
+
+
+class ChineseNameReadingOut(BaseModel):
+    name: str
+    surname: str
+    given: str
+    character_strokes: list[CharStroke]
+    grids: ChineseNameGridsOut
+    element_profile: dict[str, int]
+    dominant_element: str
+    auspicious_grids: int
+    inauspicious_grids: int
+    mixed_grids: int
+    summary: str
+
+
+# ----- Feng Shui ----------------------------------------------------------
+
+class FengShuiRequest(BaseModel):
+    profile_id: int
+    house_facing: str = Field(min_length=1, max_length=3)
+    address: str | None = Field(default=None, max_length=240)
+    latitude: float | None = None
+    longitude: float | None = None
+    rooms: dict[str, str] = Field(default_factory=dict)
+
+
+class RoomVerdictOut(BaseModel):
+    room: str
+    current_direction: str
+    direction_name: str
+    category_cn: str | None
+    category_en: str | None
+    quality: str
+    meaning: str
+    recommendation: str
+
+
+class FengShuiReadingOut(BaseModel):
+    life_kua_number: int
+    life_kua_group: str
+    house_facing: str
+    house_sitting: str
+    house_group: str
+    person_house_match: bool
+    match_note: str
+    lucky_directions: list[dict]
+    unlucky_directions: list[dict]
+    room_verdicts: list[RoomVerdictOut]
+    overall_score: int
+    summary: str
+    recommendations: list[str]
+
+
+# ----- Chat ---------------------------------------------------------------
+
+class ChatMessageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    role: str
+    content: str
+    created_at: datetime
+
+
+class ChatSessionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    profile_id: int | None
+    created_at: datetime
+
+
+class ChatMessageCreate(BaseModel):
+    session_id: int | None = None
+    profile_id: int | None = None
+    question: str = Field(min_length=1, max_length=2000)
+
+
+class ChatReply(BaseModel):
+    session: ChatSessionOut
+    user_message: ChatMessageOut
+    assistant_message: ChatMessageOut
+
+
 class PairAnalysisItem(BaseModel):
     a: int
     b: int

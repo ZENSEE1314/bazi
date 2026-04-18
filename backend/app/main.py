@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .api import auth, profiles, readings
+from .api import auth, chat, fengshui, name, profiles, readings
 from .config import get_settings
 from .db import Base, engine
 
@@ -41,6 +41,9 @@ def _init_db() -> None:
 app.include_router(auth.router)
 app.include_router(profiles.router)
 app.include_router(readings.router)
+app.include_router(name.router)
+app.include_router(fengshui.router)
+app.include_router(chat.router)
 
 
 @app.get("/api/health", tags=["meta"])

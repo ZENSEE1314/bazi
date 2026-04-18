@@ -261,6 +261,93 @@ export type DeepCompatibility = {
   tension: string[];
 };
 
+export type NumerologyPair = {
+  a: number;
+  b: number;
+  category_cn: string;
+  category_en: string;
+  theme: string;
+  auspicious: boolean;
+};
+
+export type DeepNumerology = {
+  number: string;
+  scores: Numerology;
+  life_path: number;
+  life_path_theme: string;
+  pairs: NumerologyPair[];
+  auspicious_pair_count: number;
+  inauspicious_pair_count: number;
+};
+
+export type NameGrid = {
+  number: number;
+  en: string;
+  quality: "auspicious" | "inauspicious" | "mixed";
+  theme: string;
+};
+
+export type ChineseNameReading = {
+  name: string;
+  surname: string;
+  given: string;
+  character_strokes: { char: string; strokes: number }[];
+  grids: {
+    heaven: NameGrid;
+    person: NameGrid;
+    earth: NameGrid;
+    total: NameGrid;
+    outer: NameGrid;
+  };
+  element_profile: Record<string, number>;
+  dominant_element: string;
+  auspicious_grids: number;
+  inauspicious_grids: number;
+  mixed_grids: number;
+  summary: string;
+};
+
+export type RoomVerdict = {
+  room: string;
+  current_direction: string;
+  direction_name: string;
+  category_cn: string | null;
+  category_en: string | null;
+  quality: "lucky" | "unlucky" | "unknown";
+  meaning: string;
+  recommendation: string;
+};
+
+export type FengShuiReading = {
+  life_kua_number: number;
+  life_kua_group: string;
+  house_facing: string;
+  house_sitting: string;
+  house_group: string;
+  person_house_match: boolean;
+  match_note: string;
+  lucky_directions: Array<{ direction: string; [key: string]: any }>;
+  unlucky_directions: Array<{ direction: string; [key: string]: any }>;
+  room_verdicts: RoomVerdict[];
+  overall_score: number;
+  summary: string;
+  recommendations: string[];
+};
+
+export type ChatMessage = {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+};
+
+export type ChatSession = {
+  id: number;
+  title: string;
+  profile_id: number | null;
+  created_at: string;
+};
+
 export type DailyCalendarDay = {
   date: string;
   score: number;
@@ -341,6 +428,30 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ number }),
     }),
+  numerologyDeep: (number: string) =>
+    request<DeepNumerology>("/api/numerology/deep", {
+      method: "POST",
+      body: JSON.stringify({ number }),
+    }),
+  chineseName: (name: string, surname_length?: number) =>
+    request<ChineseNameReading>("/api/name/chinese", {
+      method: "POST",
+      body: JSON.stringify({ name, surname_length }),
+    }),
+  fengShui: (profile_id: number, house_facing: string, rooms: Record<string, string>, address?: string, latitude?: number, longitude?: number) =>
+    request<FengShuiReading>("/api/fengshui/home", {
+      method: "POST",
+      body: JSON.stringify({ profile_id, house_facing, rooms, address, latitude, longitude }),
+    }),
+  chatSessions: () => request<ChatSession[]>("/api/chat/sessions"),
+  chatMessages: (sessionId: number) => request<ChatMessage[]>(`/api/chat/sessions/${sessionId}/messages`),
+  chatDeleteSession: (sessionId: number) =>
+    request<void>(`/api/chat/sessions/${sessionId}`, { method: "DELETE" }),
+  chatSend: (question: string, session_id?: number, profile_id?: number) =>
+    request<{ session: ChatSession; user_message: ChatMessage; assistant_message: ChatMessage }>(
+      "/api/chat/message",
+      { method: "POST", body: JSON.stringify({ question, session_id, profile_id }) },
+    ),
   compatibility: (a: number, b: number) =>
     request<Compatibility>("/api/compatibility", {
       method: "POST",
