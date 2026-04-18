@@ -6,12 +6,20 @@ import { useI18n } from "../i18n";
 
 const FREE_LIMIT = 3;
 
+function toDatetimeLocal(iso: string): string {
+  // Convert ISO to the YYYY-MM-DDTHH:MM shape <input type="datetime-local"> wants.
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function ProfilesPage() {
   const { t } = useI18n();
   const { user } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Profile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function refresh() {
@@ -46,11 +54,11 @@ export function ProfilesPage() {
           </div>
         </div>
         <button
-          onClick={() => setShowForm((v) => !v)}
+          onClick={() => { setEditing(null); setShowForm((v) => !v); }}
           disabled={atLimit}
           className="btn-primary disabled:opacity-50"
         >
-          {showForm ? t("common.cancel") : t("profiles.new")}
+          {showForm && !editing ? t("common.cancel") : t("profiles.new")}
         </button>
       </div>
 
@@ -60,7 +68,22 @@ export function ProfilesPage() {
         </div>
       )}
 
-      {showForm && <CreateForm onCreated={() => { setShowForm(false); refresh(); }} />}
+      {(showForm && !editing) && (
+        <ProfileForm
+          mode="create"
+          onDone={() => { setShowForm(false); refresh(); }}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
+
+      {editing && (
+        <ProfileForm
+          mode="edit"
+          initial={editing}
+          onDone={() => { setEditing(null); refresh(); }}
+          onCancel={() => setEditing(null)}
+        />
+      )}
 
       {loading ? (
         <div className="text-muted">{t("common.loading")}</div>
@@ -82,9 +105,20 @@ export function ProfilesPage() {
                   )}
                   {p.is_main && <span className="ml-2 chip element-fire">{t("profiles.main")}</span>}
                 </div>
-                <button onClick={() => onDelete(p.id)} className="text-xs text-muted hover:text-fire">
-                  {t("profiles.delete")}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { setShowForm(false); setEditing(p); }}
+                    className="text-xs text-muted hover:text-ink underline-offset-2 hover:underline"
+                  >
+                    {t("profiles.edit")}
+                  </button>
+                  <button
+                    onClick={() => onDelete(p.id)}
+                    className="text-xs text-muted hover:text-fire"
+                  >
+                    {t("profiles.delete")}
+                  </button>
+                </div>
               </div>
               <div className="text-xs text-muted mt-1">
                 {new Date(p.birth_datetime).toLocaleString()}
@@ -105,16 +139,28 @@ export function ProfilesPage() {
   );
 }
 
-function CreateForm({ onCreated }: { onCreated: () => void }) {
+// --- Form: create / edit -------------------------------------------------
+
+type ProfileFormProps = {
+  mode: "create" | "edit";
+  initial?: Profile;
+  onDone: () => void;
+  onCancel: () => void;
+};
+
+function ProfileForm({ mode, initial, onDone, onCancel }: ProfileFormProps) {
   const { t } = useI18n();
-  const [name, setName] = useState("");
-  const [chineseName, setChineseName] = useState("");
-  const [birth, setBirth] = useState("");
-  const [label, setLabel] = useState("");
-  const [location, setLocation] = useState("");
-  const [gender, setGender] = useState("");
-  const [isMain, setIsMain] = useState(false);
-  const [notes, setNotes] = useState("");
+
+  const [name, setName] = useState(initial?.name ?? "");
+  const [chineseName, setChineseName] = useState(initial?.chinese_name ?? "");
+  const [birth, setBirth] = useState(
+    initial ? toDatetimeLocal(initial.birth_datetime) : "",
+  );
+  const [label, setLabel] = useState(initial?.relationship_label ?? "");
+  const [location, setLocation] = useState(initial?.birth_location ?? "");
+  const [gender, setGender] = useState(initial?.gender ?? "");
+  const [isMain, setIsMain] = useState(initial?.is_main ?? false);
+  const [notes, setNotes] = useState(initial?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -123,7 +169,7 @@ function CreateForm({ onCreated }: { onCreated: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      await api.createProfile({
+      const payload = {
         name,
         chinese_name: chineseName || null,
         birth_datetime: new Date(birth).toISOString(),
@@ -132,8 +178,13 @@ function CreateForm({ onCreated }: { onCreated: () => void }) {
         gender: gender || null,
         is_main: isMain,
         notes: notes || null,
-      });
-      onCreated();
+      };
+      if (mode === "edit" && initial) {
+        await api.updateProfile(initial.id, payload);
+      } else {
+        await api.createProfile(payload);
+      }
+      onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -143,6 +194,11 @@ function CreateForm({ onCreated }: { onCreated: () => void }) {
 
   return (
     <form onSubmit={onSubmit} className="rounded-xl border border-ink/10 bg-white p-4 space-y-3">
+      {mode === "edit" && (
+        <div className="text-xs uppercase tracking-wider text-muted">
+          {t("profiles.edit_title")}
+        </div>
+      )}
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="block">
           <span className="text-xs text-muted">{t("profiles.name")}</span>
@@ -189,9 +245,18 @@ function CreateForm({ onCreated }: { onCreated: () => void }) {
         <textarea className="input mt-1" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
       </label>
       {error && <div className="text-xs text-fire">{error}</div>}
-      <button type="submit" disabled={busy} className="btn-primary">
-        {busy ? t("common.saving") : t("profiles.save")}
-      </button>
+      <div className="flex gap-2">
+        <button type="submit" disabled={busy} className="btn-primary">
+          {busy
+            ? t("common.saving")
+            : mode === "edit"
+              ? t("profiles.save_changes")
+              : t("profiles.save")}
+        </button>
+        <button type="button" onClick={onCancel} className="btn-ghost">
+          {t("common.cancel")}
+        </button>
+      </div>
     </form>
   );
 }
