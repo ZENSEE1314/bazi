@@ -259,6 +259,47 @@ class DailyCalendarDay(BaseModel):
     day_pillar_element: str
 
 
+# ----- Deep Compatibility -----------------------------------------------
+
+class PairInteractionOut(BaseModel):
+    a_label: str
+    b_label: str
+    a_branch: str
+    b_branch: str
+    kind: str
+    transforms_to: str | None
+    note: str
+
+
+class SpouseStarCheckSide(BaseModel):
+    applicable: bool
+    role: str | None = None
+    expected_element: str | None = None
+    partner_dm_element: str | None = None
+    partner_plays_spouse_star: bool | None = None
+    note: str
+
+
+class DeepCompatibility(BaseModel):
+    profile_a: str
+    profile_b: str
+    total_score: int
+    verdict: str
+
+    day_master_relation: dict
+    spouse_star_check: dict[str, SpouseStarCheckSide]
+    useful_god_exchange: dict
+
+    branch_interactions: list[PairInteractionOut]
+    area_scores: dict[str, int]
+    element_blend: dict[str, float]
+
+    shared_weakness: list[str]
+    complementary_strengths: list[str]
+    harmony: list[str]
+    tension: list[str]
+
+
 class PairAnalysisItem(BaseModel):
     a: int
     b: int

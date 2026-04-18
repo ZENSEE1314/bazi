@@ -202,6 +202,65 @@ export type DeepBaZi = {
   health_watch: string[];
 };
 
+export type PairInteractionOut = {
+  a_label: string;
+  b_label: string;
+  a_branch: string;
+  b_branch: string;
+  kind: "clash" | "six_combination" | "three_harmony_partial";
+  transforms_to: string | null;
+  note: string;
+};
+
+export type SpouseStarCheckSide = {
+  applicable: boolean;
+  role?: string | null;
+  expected_element?: string | null;
+  partner_dm_element?: string | null;
+  partner_plays_spouse_star?: boolean | null;
+  note: string;
+};
+
+export type DeepCompatibility = {
+  profile_a: string;
+  profile_b: string;
+  total_score: number;
+  verdict: string;
+
+  day_master_relation: {
+    a_element: string;
+    b_element: string;
+    kind: string;
+    note: string;
+  };
+  spouse_star_check: {
+    a_checks_b: SpouseStarCheckSide;
+    b_checks_a: SpouseStarCheckSide;
+  };
+  useful_god_exchange: {
+    a_useful_god: string;
+    b_useful_god: string;
+    a_useful_percent_in_b: number;
+    b_useful_percent_in_a: number;
+    a_gets_what_a_needs: boolean;
+    b_gets_what_b_needs: boolean;
+    note: string;
+  };
+  branch_interactions: PairInteractionOut[];
+  area_scores: {
+    romance: number;
+    communication: number;
+    finance: number;
+    family: number;
+    long_term: number;
+  };
+  element_blend: Record<string, number>;
+  shared_weakness: string[];
+  complementary_strengths: string[];
+  harmony: string[];
+  tension: string[];
+};
+
 export type DailyCalendarDay = {
   date: string;
   score: number;
@@ -284,6 +343,11 @@ export const api = {
     }),
   compatibility: (a: number, b: number) =>
     request<Compatibility>("/api/compatibility", {
+      method: "POST",
+      body: JSON.stringify({ profile_a_id: a, profile_b_id: b }),
+    }),
+  compatibilityDeep: (a: number, b: number) =>
+    request<DeepCompatibility>("/api/compatibility/deep", {
       method: "POST",
       body: JSON.stringify({ profile_a_id: a, profile_b_id: b }),
     }),

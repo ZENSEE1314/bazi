@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from ...core.bazi.calculator import FourPillars, Pillar, four_pillars
+from ...core.bazi.compatibility import build_deep_compatibility
 from ...core.bazi.constants import BRANCH_PINYIN, STEM_PINYIN
 from ...core.bazi.elements import element_balance
 from ...core.bazi.factors import five_factors
@@ -30,6 +31,7 @@ from ..schemas import (
     DailyLuck,
     DayMasterAnalysis,
     DeepBaZiReading,
+    DeepCompatibility,
     DeepNumerologyReading,
     DeepPillar,
     DirectionInfo,
@@ -39,8 +41,10 @@ from ..schemas import (
     LuckPillarOut,
     NumerologyReading,
     PairAnalysisItem,
+    PairInteractionOut,
     Pillar as PillarSchema,
     RelationItem,
+    SpouseStarCheckSide,
     StarInfo,
 )
 from ...core.numerology.pairs import LIFE_PATH_THEMES, analyse_pairs, life_path
@@ -592,6 +596,46 @@ def build_calendar(birth: datetime, year: int, month: int) -> list[DailyCalendar
             )
         )
     return results
+
+
+def build_deep_compatibility_reading(
+    a_name: str,
+    a_birth: datetime,
+    a_gender: str | None,
+    b_name: str,
+    b_birth: datetime,
+    b_gender: str | None,
+) -> DeepCompatibility:
+    a_fp = four_pillars(a_birth)
+    b_fp = four_pillars(b_birth)
+    c = build_deep_compatibility(a_fp, b_fp, a_gender, b_gender)
+
+    return DeepCompatibility(
+        profile_a=a_name,
+        profile_b=b_name,
+        total_score=c.total_score,
+        verdict=c.verdict,
+        day_master_relation=c.day_master_relation,
+        spouse_star_check={
+            "a_checks_b": SpouseStarCheckSide(**c.spouse_star_check["a_checks_b"]),
+            "b_checks_a": SpouseStarCheckSide(**c.spouse_star_check["b_checks_a"]),
+        },
+        useful_god_exchange=c.useful_god_exchange,
+        branch_interactions=[
+            PairInteractionOut(
+                a_label=i.a_label, b_label=i.b_label,
+                a_branch=i.a_branch, b_branch=i.b_branch,
+                kind=i.kind, transforms_to=i.transforms_to, note=i.note,
+            )
+            for i in c.branch_interactions
+        ],
+        area_scores=c.area_scores,
+        element_blend=c.element_blend,
+        shared_weakness=c.shared_weakness,
+        complementary_strengths=c.complementary_strengths,
+        harmony=c.harmony,
+        tension=c.tension,
+    )
 
 
 def _score_label(score: int) -> str:

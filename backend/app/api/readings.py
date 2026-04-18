@@ -17,6 +17,7 @@ from ..schemas import (
     DailyCalendarDay,
     DailyLuck,
     DeepBaZiReading,
+    DeepCompatibility,
     DeepNumerologyReading,
     NumerologyReading,
     NumerologyRequest,
@@ -27,6 +28,7 @@ from ..services.readings import (
     build_compatibility,
     build_daily_luck,
     build_deep_bazi,
+    build_deep_compatibility_reading,
     build_deep_numerology,
     build_numerology_reading,
 )
@@ -112,3 +114,19 @@ def compatibility(
     profile_a = _owned_profile(db, user, payload.profile_a_id)
     profile_b = _owned_profile(db, user, payload.profile_b_id)
     return build_compatibility(profile_a.birth_datetime, profile_b.birth_datetime)
+
+
+@router.post("/compatibility/deep", response_model=DeepCompatibility)
+def compatibility_deep(
+    payload: CompatibilityRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DeepCompatibility:
+    if payload.profile_a_id == payload.profile_b_id:
+        raise HTTPException(status_code=400, detail="Pick two different profiles")
+    profile_a = _owned_profile(db, user, payload.profile_a_id)
+    profile_b = _owned_profile(db, user, payload.profile_b_id)
+    return build_deep_compatibility_reading(
+        profile_a.name, profile_a.birth_datetime, profile_a.gender,
+        profile_b.name, profile_b.birth_datetime, profile_b.gender,
+    )
