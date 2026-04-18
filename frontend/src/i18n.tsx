@@ -72,6 +72,8 @@ const en: Record<string, string> = {
   "profiles.main": "MAIN",
   "profiles.view_chart": "View chart →",
   "profiles.name": "Name",
+  "profiles.chinese_name": "Chinese name (optional)",
+  "profiles.chinese_name_placeholder": "e.g. 王小明",
   "profiles.birth_dt": "Birth date & time",
   "profiles.relationship": "Relationship (self, spouse…)",
   "profiles.location": "Birth location",
@@ -135,6 +137,8 @@ const en: Record<string, string> = {
   "detail.legend_caution": "~ caution 30–44",
   "detail.legend_difficult": "✗ difficult <30",
   "detail.personality": "Personality Notes",
+  "detail.name_reading": "Chinese Name Reading",
+  "detail.open_name": "Deep analysis →",
 
   // Chart guidance
   "chart.prevention": "What to Prevent",
@@ -349,6 +353,8 @@ const zh: Record<string, string> = {
   "profiles.main": "主盘",
   "profiles.view_chart": "查看命盘 →",
   "profiles.name": "姓名",
+  "profiles.chinese_name": "中文名（选填）",
+  "profiles.chinese_name_placeholder": "例如：王小明",
   "profiles.birth_dt": "出生日期与时间",
   "profiles.relationship": "关系（本人、配偶……）",
   "profiles.location": "出生地",
@@ -411,6 +417,8 @@ const zh: Record<string, string> = {
   "detail.legend_caution": "~ 小心 30–44",
   "detail.legend_difficult": "✗ 难日 <30",
   "detail.personality": "性格特征",
+  "detail.name_reading": "姓名解读",
+  "detail.open_name": "深度分析 →",
 
   "chart.prevention": "需要避忌",
   "chart.enhancement": "如何增益",
@@ -616,6 +624,8 @@ const ms: Record<string, string> = {
   "profiles.main": "UTAMA",
   "profiles.view_chart": "Lihat carta →",
   "profiles.name": "Nama",
+  "profiles.chinese_name": "Nama Cina (pilihan)",
+  "profiles.chinese_name_placeholder": "cth. 王小明",
   "profiles.birth_dt": "Tarikh & masa lahir",
   "profiles.relationship": "Hubungan (diri, pasangan…)",
   "profiles.location": "Tempat lahir",
@@ -678,6 +688,8 @@ const ms: Record<string, string> = {
   "detail.legend_caution": "~ berhati-hati 30–44",
   "detail.legend_difficult": "✗ sukar <30",
   "detail.personality": "Nota Personaliti",
+  "detail.name_reading": "Bacaan Nama Cina",
+  "detail.open_name": "Analisa mendalam →",
 
   "chart.prevention": "Perkara Untuk Dielakkan",
   "chart.enhancement": "Cara Tambah Baik",

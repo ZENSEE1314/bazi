@@ -77,6 +77,9 @@ export function ProfilesPage() {
                   <Link to={`/profiles/${p.id}`} className="font-display text-lg hover:underline">
                     {p.name}
                   </Link>
+                  {p.chinese_name && (
+                    <span className="ml-2 font-display text-muted">{p.chinese_name}</span>
+                  )}
                   {p.is_main && <span className="ml-2 chip element-fire">{t("profiles.main")}</span>}
                 </div>
                 <button onClick={() => onDelete(p.id)} className="text-xs text-muted hover:text-fire">
@@ -105,6 +108,7 @@ export function ProfilesPage() {
 function CreateForm({ onCreated }: { onCreated: () => void }) {
   const { t } = useI18n();
   const [name, setName] = useState("");
+  const [chineseName, setChineseName] = useState("");
   const [birth, setBirth] = useState("");
   const [label, setLabel] = useState("");
   const [location, setLocation] = useState("");
@@ -121,6 +125,7 @@ function CreateForm({ onCreated }: { onCreated: () => void }) {
     try {
       await api.createProfile({
         name,
+        chinese_name: chineseName || null,
         birth_datetime: new Date(birth).toISOString(),
         relationship_label: label || null,
         birth_location: location || null,
@@ -142,6 +147,16 @@ function CreateForm({ onCreated }: { onCreated: () => void }) {
         <label className="block">
           <span className="text-xs text-muted">{t("profiles.name")}</span>
           <input className="input mt-1" value={name} onChange={(e) => setName(e.target.value)} required />
+        </label>
+        <label className="block">
+          <span className="text-xs text-muted">{t("profiles.chinese_name")}</span>
+          <input
+            className="input mt-1 font-display text-lg"
+            value={chineseName}
+            onChange={(e) => setChineseName(e.target.value)}
+            placeholder={t("profiles.chinese_name_placeholder")}
+            maxLength={16}
+          />
         </label>
         <label className="block">
           <span className="text-xs text-muted">{t("profiles.birth_dt")}</span>

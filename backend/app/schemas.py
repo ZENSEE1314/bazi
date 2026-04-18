@@ -36,6 +36,7 @@ class Token(BaseModel):
 
 class ProfileCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
+    chinese_name: str | None = Field(default=None, max_length=60)
     birth_datetime: datetime
     relationship_label: str | None = Field(default=None, max_length=60)
     birth_location: str | None = Field(default=None, max_length=160)
@@ -46,6 +47,7 @@ class ProfileCreate(BaseModel):
 
 class ProfileUpdate(BaseModel):
     name: str | None = Field(default=None, max_length=120)
+    chinese_name: str | None = Field(default=None, max_length=60)
     birth_datetime: datetime | None = None
     relationship_label: str | None = Field(default=None, max_length=60)
     birth_location: str | None = Field(default=None, max_length=160)
@@ -59,6 +61,7 @@ class ProfileOut(BaseModel):
 
     id: int
     name: str
+    chinese_name: str | None
     birth_datetime: datetime
     relationship_label: str | None
     birth_location: str | None

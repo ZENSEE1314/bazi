@@ -36,6 +36,7 @@ class Profile(Base):
     )
 
     name: Mapped[str] = mapped_column(String(120), nullable=False)
+    chinese_name: Mapped[str | None] = mapped_column(String(60))
     relationship_label: Mapped[str | None] = mapped_column(String(60))  # self, spouse, child, etc.
     birth_datetime: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     birth_location: Mapped[str | None] = mapped_column(String(160))

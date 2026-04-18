@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   api,
+  ChineseNameReading,
   Daily,
   DailyCalendarDay,
   DeepBaZi,
@@ -47,6 +48,7 @@ export function ProfileDetailPage() {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [deep, setDeep] = useState<DeepBaZi | null>(null);
+  const [nameReading, setNameReading] = useState<ChineseNameReading | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Daily luck date picker
@@ -67,6 +69,11 @@ export function ProfileDetailPage() {
       .then(([p, d]) => {
         setProfile(p);
         setDeep(d);
+        if (p.chinese_name) {
+          api.chineseName(p.chinese_name).then(setNameReading).catch(() => {});
+        } else {
+          setNameReading(null);
+        }
       })
       .catch((e) => setError(String(e)));
   }, [profileId]);
@@ -97,6 +104,9 @@ export function ProfileDetailPage() {
           {t("detail.back")}
         </Link>
         <h1 className="font-display text-2xl">{profile.name}</h1>
+        {profile.chinese_name && (
+          <span className="font-display text-2xl text-muted">{profile.chinese_name}</span>
+        )}
         {profile.is_main && <span className="chip element-fire">{t("profiles.main")}</span>}
         <span className="text-sm text-muted">
           {new Date(profile.birth_datetime).toLocaleString()}
@@ -556,6 +566,89 @@ export function ProfileDetailPage() {
           <div className="text-muted text-sm">Loading…</div>
         )}
       </section>
+
+      {/* --- Chinese Name Reading ----------------------------------------- */}
+      {nameReading && (
+        <section className="rounded-2xl border border-ink/10 bg-white p-5">
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted">
+                {t("detail.name_reading")}
+              </div>
+              <div className="font-display text-3xl mt-1">
+                {nameReading.name}{" "}
+                <span className="text-muted text-base">
+                  ({nameReading.surname} · {nameReading.given})
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-2 text-xs">
+              <span className="chip element-wood">✓ {nameReading.auspicious_grids}</span>
+              <span className="chip element-earth">~ {nameReading.mixed_grids}</span>
+              <span className="chip element-fire">✗ {nameReading.inauspicious_grids}</span>
+              <Link to="/name" className="btn-ghost text-xs">
+                {t("detail.open_name")}
+              </Link>
+            </div>
+          </div>
+          <p className="text-sm">{nameReading.summary}</p>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {nameReading.character_strokes.map((c, i) => (
+              <div
+                key={i}
+                className="px-3 py-1.5 rounded-lg border border-ink/10 bg-parchment"
+              >
+                <span className="font-display text-xl mr-2">{c.char}</span>
+                <span className="text-xs text-muted">
+                  {c.strokes} {t("name.strokes")}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs uppercase text-muted">
+                  <th className="text-left py-1">{t("name.grid")}</th>
+                  <th className="text-left py-1">{t("name.grid_number")}</th>
+                  <th className="text-left py-1">{t("name.grid_meaning")}</th>
+                  <th className="text-left py-1">{t("name.grid_quality")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(["heaven", "person", "earth", "total", "outer"] as const).map((key) => {
+                  const g = nameReading.grids[key];
+                  const qClass =
+                    g.quality === "auspicious"
+                      ? "element-wood"
+                      : g.quality === "inauspicious"
+                      ? "element-fire"
+                      : "element-earth";
+                  const gridCn: Record<string, string> = {
+                    heaven: "天格",
+                    person: "人格",
+                    earth: "地格",
+                    total: "总格",
+                    outer: "外格",
+                  };
+                  return (
+                    <tr key={key} className="border-t border-ink/5">
+                      <td className="py-1.5"><b>{gridCn[key]}</b></td>
+                      <td className="font-display text-lg">{g.number}</td>
+                      <td>{g.en}</td>
+                      <td>
+                        <span className={`chip ${qClass}`}>{g.quality}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {/* --- Personality --------------------------------------------------- */}
       <section className="rounded-2xl border border-ink/10 bg-white p-5">

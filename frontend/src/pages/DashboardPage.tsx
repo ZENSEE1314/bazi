@@ -52,7 +52,12 @@ export function DashboardPage() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <div className="text-xs text-muted uppercase tracking-wider">{t("dash.main_profile")}</div>
-            <h1 className="font-display text-3xl mt-1">{profile.name}</h1>
+            <h1 className="font-display text-3xl mt-1">
+              {profile.name}
+              {profile.chinese_name && (
+                <span className="ml-3 text-muted">{profile.chinese_name}</span>
+              )}
+            </h1>
             <div className="text-sm text-muted mt-1">
               {new Date(profile.birth_datetime).toLocaleString()} • {profile.birth_location || "—"}
             </div>

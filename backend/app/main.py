@@ -36,6 +36,24 @@ def _init_db() -> None:
     # For production, prefer alembic migrations. This is a safety net for
     # first boot and for dev SQLite.
     Base.metadata.create_all(bind=engine)
+    _ensure_profile_columns()
+
+
+def _ensure_profile_columns() -> None:
+    """Idempotent migration: add columns introduced after 0.1.0."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    try:
+        cols = {c["name"] for c in inspector.get_columns("profiles")}
+    except Exception:
+        return
+
+    additions = [("chinese_name", "VARCHAR(60)")]
+    with engine.begin() as conn:
+        for name, ddl in additions:
+            if name not in cols:
+                conn.execute(text(f"ALTER TABLE profiles ADD COLUMN {name} {ddl}"))
 
 
 app.include_router(auth.router)

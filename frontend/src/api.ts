@@ -21,6 +21,7 @@ export type User = {
 export type Profile = {
   id: number;
   name: string;
+  chinese_name: string | null;
   birth_datetime: string;
   relationship_label: string | null;
   birth_location: string | null;
