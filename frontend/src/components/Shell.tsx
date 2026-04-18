@@ -1,18 +1,23 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth";
+import { useI18n } from "../i18n";
 
-const links = [
-  { to: "/", label: "Dashboard", end: true },
-  { to: "/profiles", label: "Profiles" },
-  { to: "/numerology", label: "Numbers" },
-  { to: "/name", label: "Name" },
-  { to: "/fengshui", label: "Feng Shui" },
-  { to: "/compatibility", label: "Compatibility" },
-  { to: "/chat", label: "Ask Reader" },
-];
+function buildLinks(t: (k: string) => string) {
+  return [
+    { to: "/", label: t("nav.dashboard"), end: true },
+    { to: "/profiles", label: t("nav.profiles") },
+    { to: "/numerology", label: t("nav.numbers") },
+    { to: "/name", label: t("nav.name") },
+    { to: "/fengshui", label: t("nav.fengshui") },
+    { to: "/compatibility", label: t("nav.compatibility") },
+    { to: "/chat", label: t("nav.chat") },
+  ];
+}
 
 export function Shell() {
   const { user, logout } = useAuth();
+  const { lang, setLang, t } = useI18n();
+  const links = buildLinks(t);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -39,15 +44,25 @@ export function Shell() {
             ))}
           </nav>
           <div className="flex items-center gap-2">
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value as any)}
+              className="text-xs rounded-lg border border-ink/15 bg-white px-2 py-1 focus:outline-none"
+              title={t("common.language")}
+            >
+              <option value="en">EN</option>
+              <option value="zh">中文</option>
+              <option value="ms">BM</option>
+            </select>
             <span className="hidden sm:inline text-xs text-muted">
               {user?.email}
               {user?.is_premium ? (
-                <span className="ml-2 chip bg-earth text-white">PREMIUM</span>
+                <span className="ml-2 chip bg-earth text-white">{t("common.premium")}</span>
               ) : (
-                <span className="ml-2 chip element-metal">FREE</span>
+                <span className="ml-2 chip element-metal">{t("common.free")}</span>
               )}
             </span>
-            <button onClick={logout} className="btn-ghost text-xs">Sign out</button>
+            <button onClick={logout} className="btn-ghost text-xs">{t("common.signout")}</button>
           </div>
         </div>
         <nav className="md:hidden border-t border-ink/10 overflow-x-auto">

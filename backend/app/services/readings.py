@@ -9,6 +9,7 @@ from ...core.bazi.compatibility import build_deep_compatibility
 from ...core.bazi.constants import BRANCH_PINYIN, STEM_PINYIN
 from ...core.bazi.elements import element_balance
 from ...core.bazi.factors import five_factors
+from ...core.bazi.guidance import ELEMENT_GUIDANCE, build_prevention_enhancement
 from ...core.bazi.kua import compute_life_kua
 from ...core.bazi.luck import annual_pillar, luck_pillars
 from ...core.bazi.mansions import mansions_for
@@ -47,7 +48,13 @@ from ..schemas import (
     SpouseStarCheckSide,
     StarInfo,
 )
-from ...core.numerology.pairs import LIFE_PATH_THEMES, analyse_pairs, life_path
+from ...core.numerology.pairs import (
+    LIFE_PATH_THEMES,
+    analyse_pairs,
+    explain_pair,
+    life_path,
+    suggest_better_number,
+)
 from ...core.numerology.scorer import score_number
 
 # 五行生克: productive (生) and destructive (克) cycles.
@@ -538,6 +545,14 @@ def build_deep_bazi(birth: datetime, gender: str | None, today: datetime | None 
 
     chart_string = f"{fp.year} {fp.month} {fp.day} {fp.hour}"
 
+    guide = build_prevention_enhancement(
+        day_master=fp.day_master,
+        useful_god=dms.useful_god,
+        avoid_god=dms.avoid_god,
+        strength_level=dms.level,
+        weakest_element=bal.weakest(),
+    )
+
     return DeepBaZiReading(
         pillars=pillars_out,
         chart_string=chart_string,
@@ -560,6 +575,16 @@ def build_deep_bazi(birth: datetime, gender: str | None, today: datetime | None 
         wealth_strategy=_wealth_strategy(dms, bal.as_dict),
         love_outlook=_love_outlook(fp, dms),
         health_watch=_health_watch(fp.day_master_element, bal.weakest()),
+        prevention=guide["prevention"],
+        enhancement=guide["enhancement"],
+        color_palette_favor=guide["color_palette_favor"],
+        color_palette_avoid=guide["color_palette_avoid"],
+        foods_favor=guide["foods_favor"],
+        foods_avoid=guide["foods_avoid"],
+        gemstones=guide["gemstones"],
+        lucky_numbers=guide["lucky_numbers"],
+        best_direction=guide["best_direction"],
+        best_careers=guide["best_careers"],
     )
 
 
@@ -650,7 +675,9 @@ def _score_label(score: int) -> str:
     return "difficult"
 
 
-def build_deep_numerology(number: str) -> DeepNumerologyReading:
+def build_deep_numerology(number: str, profile: "Profile | None" = None) -> DeepNumerologyReading:  # noqa: F821
+    from ..schemas import NumberSuggestion
+
     scored = build_numerology_reading(number)
     lp = life_path(number)
     pairs = analyse_pairs(number)
@@ -662,12 +689,14 @@ def build_deep_numerology(number: str) -> DeepNumerologyReading:
             category_en=p.category_en,
             theme=p.theme,
             auspicious=p.auspicious,
+            explanation=explain_pair(p.a, p.b),
         )
         for p in pairs
     ]
     ausp = sum(1 for p in pairs if p.auspicious)
     inausp = sum(1 for p in pairs if not p.auspicious)
-    return DeepNumerologyReading(
+
+    reading = DeepNumerologyReading(
         number=number,
         scores=scored,
         life_path=lp,
@@ -676,3 +705,39 @@ def build_deep_numerology(number: str) -> DeepNumerologyReading:
         auspicious_pair_count=ausp,
         inauspicious_pair_count=inausp,
     )
+
+    if profile is not None:
+        fp = four_pillars(profile.birth_datetime)
+        dms = day_master_strength(fp)
+        ug = ELEMENT_GUIDANCE.get(dms.useful_god, {})
+        ag = ELEMENT_GUIDANCE.get(dms.avoid_god, {})
+        preferred = list(ug.get("numbers", []))
+        avoid_digits = list(ag.get("numbers", []))
+
+        # Count preferred vs avoid digits in the number
+        digits = [int(c) for c in number if c.isdigit()]
+        pref_count = sum(1 for d in digits if d in preferred)
+        avoid_count = sum(1 for d in digits if d in avoid_digits)
+        total = len(digits) or 1
+
+        personalized = (
+            f"For {profile.name} ({fp.day_master} {fp.day_master_element} Day Master): "
+            f"Useful God is {dms.useful_god}, so digits {preferred} amplify your luck. "
+            f"Avoid God is {dms.avoid_god}, so digits {avoid_digits} drain you. "
+            f"This number contains {pref_count}/{total} favored digits and "
+            f"{avoid_count}/{total} draining digits."
+        )
+
+        suggestion_dict = suggest_better_number(number, dms.useful_god)
+        suggestion = NumberSuggestion(**suggestion_dict)
+
+        reading.profile_name = profile.name
+        reading.profile_day_master = fp.day_master
+        reading.profile_day_master_element = fp.day_master_element
+        reading.profile_useful_god = dms.useful_god
+        reading.personalized_note = personalized
+        reading.preferred_digits = preferred
+        reading.digits_to_avoid = avoid_digits
+        reading.suggestion = suggestion
+
+    return reading

@@ -200,6 +200,16 @@ export type DeepBaZi = {
   wealth_strategy: string[];
   love_outlook: string[];
   health_watch: string[];
+  prevention: string[];
+  enhancement: string[];
+  color_palette_favor: string[];
+  color_palette_avoid: string[];
+  foods_favor: string[];
+  foods_avoid: string[];
+  gemstones: string[];
+  lucky_numbers: number[];
+  best_direction: string;
+  best_careers: string[];
 };
 
 export type PairInteractionOut = {
@@ -268,6 +278,13 @@ export type NumerologyPair = {
   category_en: string;
   theme: string;
   auspicious: boolean;
+  explanation: string;
+};
+
+export type NumberSuggestion = {
+  original: string;
+  issues: string[];
+  suggestions: string[];
 };
 
 export type DeepNumerology = {
@@ -278,6 +295,14 @@ export type DeepNumerology = {
   pairs: NumerologyPair[];
   auspicious_pair_count: number;
   inauspicious_pair_count: number;
+  profile_name: string | null;
+  profile_day_master: string | null;
+  profile_day_master_element: string | null;
+  profile_useful_god: string | null;
+  personalized_note: string | null;
+  preferred_digits: number[];
+  digits_to_avoid: number[];
+  suggestion: NumberSuggestion | null;
 };
 
 export type NameGrid = {
@@ -428,10 +453,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ number }),
     }),
-  numerologyDeep: (number: string) =>
+  numerologyDeep: (number: string, profile_id?: number, language?: string) =>
     request<DeepNumerology>("/api/numerology/deep", {
       method: "POST",
-      body: JSON.stringify({ number }),
+      body: JSON.stringify({ number, profile_id, language }),
     }),
   chineseName: (name: string, surname_length?: number) =>
     request<ChineseNameReading>("/api/name/chinese", {
@@ -447,10 +472,10 @@ export const api = {
   chatMessages: (sessionId: number) => request<ChatMessage[]>(`/api/chat/sessions/${sessionId}/messages`),
   chatDeleteSession: (sessionId: number) =>
     request<void>(`/api/chat/sessions/${sessionId}`, { method: "DELETE" }),
-  chatSend: (question: string, session_id?: number, profile_id?: number) =>
+  chatSend: (question: string, session_id?: number, profile_id?: number, language?: string) =>
     request<{ session: ChatSession; user_message: ChatMessage; assistant_message: ChatMessage }>(
       "/api/chat/message",
-      { method: "POST", body: JSON.stringify({ question, session_id, profile_id }) },
+      { method: "POST", body: JSON.stringify({ question, session_id, profile_id, language }) },
     ),
   compatibility: (a: number, b: number) =>
     request<Compatibility>("/api/compatibility", {

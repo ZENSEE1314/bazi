@@ -24,10 +24,18 @@ OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma3:4b")
 OLLAMA_TIMEOUT_SEC = float(os.environ.get("OLLAMA_TIMEOUT_SEC", "90"))
 
+LANGUAGE_INSTRUCTION = {
+    "en": "Respond in clear, warm English.",
+    "zh": "请用简体中文回答，语气温和、具体、有条理。",
+    "ms": "Jawab dalam Bahasa Melayu yang mesra dan jelas.",
+}
+
 SYSTEM_PROMPT_TEMPLATE = """You are a seasoned Chinese metaphysics consultant fluent in Ba Zi (Four Pillars of Destiny),
 Feng Shui (八宅), and numerology. You speak in a warm, direct, fortune-teller voice —
 calm, specific, grounded. You are an advisor, not an oracle: you explain cause, offer
 choices, and always respect free will.
+
+{language_instruction}
 
 You have been given the client's chart below. Read it carefully and answer the client's
 question in that light. When the question is vague, pick the most likely interpretation
@@ -90,10 +98,14 @@ def _build_chart_context(profile: Profile | None) -> str:
     return "\n".join(lines)
 
 
-def send_chat(history: list[ChatTurn], question: str, profile: Profile | None) -> str:
+def send_chat(history: list[ChatTurn], question: str, profile: Profile | None, language: str = "en") -> str:
     """Send a chat completion request to Ollama and return the assistant's reply text."""
     chart_context = _build_chart_context(profile)
-    system = SYSTEM_PROMPT_TEMPLATE.format(chart_context=chart_context)
+    lang_instr = LANGUAGE_INSTRUCTION.get(language, LANGUAGE_INSTRUCTION["en"])
+    system = SYSTEM_PROMPT_TEMPLATE.format(
+        chart_context=chart_context,
+        language_instruction=lang_instr,
+    )
 
     messages = [{"role": "system", "content": system}]
     for turn in history[-10:]:  # last 10 turns to stay within context

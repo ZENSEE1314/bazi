@@ -21,6 +21,7 @@ from ..schemas import (
     DeepNumerologyReading,
     NumerologyReading,
     NumerologyRequest,
+    NumerologyRequestDeep,
 )
 from ..services.readings import (
     build_bazi_reading,
@@ -88,9 +89,18 @@ def profile_deep(
 
 
 @router.post("/numerology/deep", response_model=DeepNumerologyReading)
-def deep_numerology(payload: NumerologyRequest, user: User = Depends(get_current_user)) -> DeepNumerologyReading:
+def deep_numerology(
+    payload: NumerologyRequestDeep,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DeepNumerologyReading:
+    profile = None
+    if payload.profile_id is not None:
+        profile = db.get(Profile, payload.profile_id)
+        if profile is None or profile.owner_id != user.id:
+            raise HTTPException(status_code=404, detail="Profile not found")
     try:
-        return build_deep_numerology(payload.number)
+        return build_deep_numerology(payload.number, profile)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

@@ -1,7 +1,9 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { api, ChatMessage, ChatSession, Profile } from "../api";
+import { useI18n } from "../i18n";
 
 export function ChatPage() {
+  const { t, lang } = useI18n();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [profileId, setProfileId] = useState<number | "">("");
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -40,6 +42,7 @@ export function ChatPage() {
         question.trim(),
         sessionId ?? undefined,
         profileId === "" ? undefined : Number(profileId),
+        lang,
       );
       if (!sessionId) {
         setSessionId(resp.session.id);
@@ -68,20 +71,17 @@ export function ChatPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="font-display text-2xl">Ask the Reader</h1>
-          <p className="text-sm text-muted">
-            A personal Ba Zi / feng shui consultant. It reads your saved chart and answers
-            questions as a warm, direct advisor. Powered by Ollama + Gemma (self-hosted).
-          </p>
+          <h1 className="font-display text-2xl">{t("chat.title")}</h1>
+          <p className="text-sm text-muted">{t("chat.subtitle")}</p>
         </div>
         <label className="block">
-          <span className="text-xs text-muted">Chart context</span>
+          <span className="text-xs text-muted">{t("chat.chart_context")}</span>
           <select
             className="input mt-1"
             value={profileId}
             onChange={(e) => setProfileId(e.target.value === "" ? "" : Number(e.target.value))}
           >
-            <option value="">No profile (general)</option>
+            <option value="">{t("chat.no_profile")}</option>
             {profiles.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </label>
@@ -93,9 +93,9 @@ export function ChatPage() {
             className="btn-ghost w-full text-sm"
             onClick={() => { setSessionId(null); setMessages([]); }}
           >
-            + New chat
+            {t("chat.new_chat")}
           </button>
-          <div className="text-xs uppercase tracking-wider text-muted mt-3">Recent</div>
+          <div className="text-xs uppercase tracking-wider text-muted mt-3">{t("chat.recent")}</div>
           <div className="space-y-1 max-h-[420px] overflow-y-auto">
             {sessions.length === 0 && <div className="text-xs text-muted">No chats yet</div>}
             {sessions.map((s) => (
@@ -125,8 +125,7 @@ export function ChatPage() {
               <div className="h-full flex items-center justify-center text-center text-sm text-muted">
                 <div>
                   <div className="font-display text-3xl mb-2">八字</div>
-                  <p>Ask a question — career, love, money, timing, feng shui of a room.</p>
-                  <p className="mt-2 text-xs">The reader will answer in under 250 words, grounded in your chart.</p>
+                  <p>{t("chat.empty")}</p>
                 </div>
               </div>
             )}
@@ -142,7 +141,7 @@ export function ChatPage() {
             {busy && (
               <div className="flex justify-start">
                 <div className="rounded-2xl px-4 py-2 bg-parchment border border-ink/10 text-sm text-muted">
-                  The reader is consulting the chart…
+                  {t("chat.consulting")}
                 </div>
               </div>
             )}
@@ -151,14 +150,14 @@ export function ChatPage() {
           <form onSubmit={onSubmit} className="flex gap-2 border-t border-ink/10 p-3">
             <input
               className="input flex-1"
-              placeholder="How is my career luck in 2026? What should I do about my bedroom layout?"
+              placeholder={t("chat.ask_placeholder")}
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               disabled={busy}
               required
             />
             <button type="submit" disabled={busy || !question.trim()} className="btn-primary">
-              Ask
+              {t("chat.ask")}
             </button>
           </form>
         </section>

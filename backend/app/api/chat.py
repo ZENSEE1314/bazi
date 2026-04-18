@@ -88,7 +88,7 @@ def send_message(
 
     # Call Ollama
     try:
-        reply_text = send_chat(history, payload.question, profile)
+        reply_text = send_chat(history, payload.question, profile, payload.language or "en")
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 

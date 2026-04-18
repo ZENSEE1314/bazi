@@ -8,6 +8,7 @@ import {
   Profile,
 } from "../api";
 import { ElementBar, ScoreRing } from "../components/PillarCard";
+import { useI18n } from "../i18n";
 
 const elementClass: Record<string, string> = {
   wood: "element-wood",
@@ -40,6 +41,7 @@ function formatDate(d: Date) {
 }
 
 export function ProfileDetailPage() {
+  const { t } = useI18n();
   const { id } = useParams<{ id: string }>();
   const profileId = Number(id);
 
@@ -282,6 +284,73 @@ export function ProfileDetailPage() {
               <div className="text-[11px] text-muted mt-1">{v.gods.join(", ")}</div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* --- Prevention / Enhancement ------------------------------------ */}
+      <section className="grid md:grid-cols-2 gap-4">
+        <div className="rounded-2xl border border-fire/30 bg-fire-soft/30 p-5">
+          <div className="text-xs uppercase tracking-wider text-fire mb-2">⚠ {t("chart.prevention")}</div>
+          <ul className="list-disc pl-5 text-sm space-y-1">
+            {deep.prevention.map((p, i) => <li key={i}>{p}</li>)}
+          </ul>
+        </div>
+        <div className="rounded-2xl border border-wood/30 bg-wood-soft/30 p-5">
+          <div className="text-xs uppercase tracking-wider text-wood mb-2">✓ {t("chart.enhancement")}</div>
+          <ul className="list-disc pl-5 text-sm space-y-1">
+            {deep.enhancement.map((e, i) => <li key={i}>{e}</li>)}
+          </ul>
+        </div>
+      </section>
+
+      {/* --- Lifestyle palette ------------------------------------------ */}
+      <section className="rounded-2xl border border-ink/10 bg-white p-5">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-wood mb-1">{t("chart.colors_favor")}</div>
+            <div className="flex flex-wrap gap-1.5">
+              {deep.color_palette_favor.map((c) => <span key={c} className="chip element-wood">{c}</span>)}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-fire mb-1">{t("chart.colors_avoid")}</div>
+            <div className="flex flex-wrap gap-1.5">
+              {deep.color_palette_avoid.map((c) => <span key={c} className="chip element-fire">{c}</span>)}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted mb-1">{t("chart.gemstones")}</div>
+            <div className="flex flex-wrap gap-1.5">
+              {deep.gemstones.map((g) => <span key={g} className="chip element-earth">{g}</span>)}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted mb-1">{t("chart.lucky_numbers")}</div>
+            <div className="flex gap-1.5">
+              {deep.lucky_numbers.map((n) => (
+                <span key={n} className="font-display text-2xl bg-earth-soft text-earth px-2 rounded">{n}</span>
+              ))}
+            </div>
+            <div className="text-xs text-muted mt-2">{t("chart.best_direction")}: <b>{deep.best_direction}</b></div>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-wood mb-1">{t("chart.foods_favor")}</div>
+            <ul className="text-xs list-disc pl-5">
+              {deep.foods_favor.slice(0, 5).map((f) => <li key={f}>{f}</li>)}
+            </ul>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-fire mb-1">{t("chart.foods_avoid")}</div>
+            <ul className="text-xs list-disc pl-5">
+              {deep.foods_avoid.slice(0, 5).map((f) => <li key={f}>{f}</li>)}
+            </ul>
+          </div>
+          <div className="sm:col-span-2">
+            <div className="text-xs uppercase tracking-wider text-muted mb-1">{t("chart.best_careers")}</div>
+            <div className="flex flex-wrap gap-1.5">
+              {deep.best_careers.map((c) => <span key={c} className="chip element-metal">{c}</span>)}
+            </div>
+          </div>
         </div>
       </section>
 

@@ -249,6 +249,16 @@ class DeepBaZiReading(BaseModel):
     wealth_strategy: list[str]
     love_outlook: list[str]
     health_watch: list[str]
+    prevention: list[str]
+    enhancement: list[str]
+    color_palette_favor: list[str]
+    color_palette_avoid: list[str]
+    foods_favor: list[str]
+    foods_avoid: list[str]
+    gemstones: list[str]
+    lucky_numbers: list[int]
+    best_direction: str
+    best_careers: list[str]
 
 
 class DailyCalendarDay(BaseModel):
@@ -403,6 +413,7 @@ class ChatMessageCreate(BaseModel):
     session_id: int | None = None
     profile_id: int | None = None
     question: str = Field(min_length=1, max_length=2000)
+    language: str | None = "en"  # en, zh, ms
 
 
 class ChatReply(BaseModel):
@@ -418,6 +429,19 @@ class PairAnalysisItem(BaseModel):
     category_en: str
     theme: str
     auspicious: bool
+    explanation: str
+
+
+class NumerologyRequestDeep(BaseModel):
+    number: str = Field(min_length=1, max_length=64)
+    profile_id: int | None = None
+    language: str | None = "en"
+
+
+class NumberSuggestion(BaseModel):
+    original: str
+    issues: list[str]
+    suggestions: list[str]
 
 
 class DeepNumerologyReading(BaseModel):
@@ -428,3 +452,12 @@ class DeepNumerologyReading(BaseModel):
     pairs: list[PairAnalysisItem]
     auspicious_pair_count: int
     inauspicious_pair_count: int
+    # Profile-linked fields (populated when profile_id provided)
+    profile_name: str | None = None
+    profile_day_master: str | None = None
+    profile_day_master_element: str | None = None
+    profile_useful_god: str | None = None
+    personalized_note: str | None = None
+    preferred_digits: list[int] = Field(default_factory=list)
+    digits_to_avoid: list[int] = Field(default_factory=list)
+    suggestion: NumberSuggestion | None = None
