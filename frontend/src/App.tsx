@@ -13,6 +13,7 @@ import { ChatPage } from "./pages/ChatPage";
 import { CompatibilityPage } from "./pages/CompatibilityPage";
 import { ReferralsPage } from "./pages/ReferralsPage";
 import { AdminPage } from "./pages/AdminPage";
+import { UpgradePage } from "./pages/UpgradePage";
 
 function Private({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/compatibility" element={<CompatibilityPage />} />
           <Route path="/referrals" element={<ReferralsPage />} />
+          <Route path="/upgrade" element={<UpgradePage />} />
           <Route path="/admin" element={<AdminPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

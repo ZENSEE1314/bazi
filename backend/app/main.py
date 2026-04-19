@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .api import admin, auth, chat, fengshui, name, profiles, readings, referrals
+from .api import admin, auth, billing, chat, fengshui, name, profiles, readings, referrals
 from .config import get_settings
 from .db import Base, engine
 
@@ -38,6 +38,7 @@ def _init_db() -> None:
     Base.metadata.create_all(bind=engine)
     _ensure_profile_columns()
     _ensure_user_columns()
+    _ensure_subscription_payment_columns()
     _bootstrap_admin()
 
 
@@ -78,6 +79,8 @@ def _ensure_user_columns() -> None:
         ("free_name_uses", "INTEGER NOT NULL DEFAULT 0"),
         ("free_fengshui_uses", "INTEGER NOT NULL DEFAULT 0"),
         ("free_chat_messages", "INTEGER NOT NULL DEFAULT 0"),
+        ("stripe_customer_id", "VARCHAR(64)"),
+        ("stripe_subscription_id", "VARCHAR(64)"),
     ]
     with engine.begin() as conn:
         for col_name, ddl in additions:
@@ -93,6 +96,20 @@ def _ensure_user_columns() -> None:
                 text("UPDATE users SET referral_code = :c WHERE id = :id"),
                 {"c": code, "id": row[0]},
             )
+
+
+def _ensure_subscription_payment_columns() -> None:
+    """Add stripe_invoice_id column for idempotent webhook handling."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    try:
+        cols = {c["name"] for c in inspector.get_columns("subscription_payments")}
+    except Exception:
+        return
+    if "stripe_invoice_id" not in cols:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE subscription_payments ADD COLUMN stripe_invoice_id VARCHAR(64)"))
 
 
 def _bootstrap_admin() -> None:
@@ -117,6 +134,7 @@ app.include_router(fengshui.router)
 app.include_router(chat.router)
 app.include_router(referrals.router)
 app.include_router(admin.router)
+app.include_router(billing.router)
 
 
 @app.get("/api/health", tags=["meta"])

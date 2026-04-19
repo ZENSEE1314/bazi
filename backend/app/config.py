@@ -29,6 +29,16 @@ class Settings(BaseSettings):
 
     static_dir: str = "frontend/dist"
 
+    # Stripe integration (all optional; the billing endpoints return a clear
+    # error when keys are missing).
+    stripe_secret_key: str = ""
+    stripe_publishable_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_price_id: str = ""            # recurring $19/mo Price ID
+    stripe_success_path: str = "/referrals?upgraded=1"
+    stripe_cancel_path: str = "/referrals?upgraded=0"
+    public_base_url: str = ""            # e.g. https://your-app.up.railway.app
+
 
 @lru_cache
 def get_settings() -> Settings:

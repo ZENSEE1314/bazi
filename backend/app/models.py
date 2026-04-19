@@ -33,6 +33,9 @@ class User(Base):
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    stripe_subscription_id: Mapped[str | None] = mapped_column(String(64), index=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -112,6 +115,7 @@ class SubscriptionPayment(Base):
     amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)  # e.g. 1900 = $19.00
     period_month: Mapped[str] = mapped_column(String(7), nullable=False)  # "2026-04"
     note: Mapped[str | None] = mapped_column(String(200))
+    stripe_invoice_id: Mapped[str | None] = mapped_column(String(64), unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -2,7 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 
-function buildLinks(t: (k: string) => string, isAdmin: boolean) {
+function buildLinks(t: (k: string) => string, isAdmin: boolean, isPremium: boolean) {
   const base = [
     { to: "/", label: t("nav.dashboard"), end: true },
     { to: "/profiles", label: t("nav.profiles") },
@@ -13,6 +13,7 @@ function buildLinks(t: (k: string) => string, isAdmin: boolean) {
     { to: "/chat", label: t("nav.chat") },
     { to: "/referrals", label: t("nav.referrals") },
   ];
+  if (!isPremium) base.push({ to: "/upgrade", label: t("nav.upgrade") });
   if (isAdmin) base.push({ to: "/admin", label: t("nav.admin") });
   return base;
 }
@@ -20,7 +21,7 @@ function buildLinks(t: (k: string) => string, isAdmin: boolean) {
 export function Shell() {
   const { user, logout } = useAuth();
   const { lang, setLang, t } = useI18n();
-  const links = buildLinks(t, user?.is_admin ?? false);
+  const links = buildLinks(t, user?.is_admin ?? false, user?.is_premium ?? false);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -62,7 +63,9 @@ export function Shell() {
               {user?.is_premium ? (
                 <span className="ml-2 chip bg-earth text-white">{t("common.premium")}</span>
               ) : (
-                <span className="ml-2 chip element-metal">{t("common.free")}</span>
+                <NavLink to="/upgrade" className="ml-2 chip element-metal hover:bg-ink/10">
+                  {t("common.free")}
+                </NavLink>
               )}
             </span>
             <button onClick={logout} className="btn-ghost text-xs">{t("common.signout")}</button>

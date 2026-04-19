@@ -20,6 +20,17 @@ export type User = {
   referral_code: string | null;
   referred_by_id: number | null;
   created_at: string;
+  stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
+};
+
+export type BillingConfig = {
+  enabled: boolean;
+  publishable_key: string | null;
+  price_cents: number;
+  price_usd: number;
+  price_id: string | null;
+  interval: "month" | "year";
 };
 
 export type ReferralSummary = {
@@ -568,4 +579,11 @@ export const api = {
       `/api/admin/commissions/pay_all${period_month ? `?period_month=${period_month}` : ""}`,
       { method: "POST" },
     ),
+
+  // Billing
+  billingConfig: () => request<BillingConfig>("/api/billing/config"),
+  billingCheckout: () =>
+    request<{ url: string; id: string }>("/api/billing/checkout", { method: "POST" }),
+  billingPortal: () =>
+    request<{ url: string }>("/api/billing/portal", { method: "POST" }),
 };
