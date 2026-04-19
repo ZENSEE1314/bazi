@@ -568,6 +568,18 @@ class MarkPremiumRequest(BaseModel):
     note: str | None = Field(default=None, max_length=200)
 
 
+# ----- History -----------------------------------------------------------
+
+class HistoryItemOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    kind: str
+    label: str
+    subtype: str | None
+    created_at: datetime
+
+
 class PairAnalysisItem(BaseModel):
     a: int
     b: int

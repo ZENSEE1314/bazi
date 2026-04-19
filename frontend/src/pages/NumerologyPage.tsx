@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { api, DeepNumerology, Profile } from "../api";
 import { ElementBar, ScoreRing } from "../components/PillarCard";
+import { HistorySidebar } from "../components/HistorySidebar";
 import { useI18n } from "../i18n";
 
 const TYPE_IDS = ["phone", "bank", "car", "id", "credit"] as const;
@@ -44,6 +45,8 @@ export function NumerologyPage() {
   const [result, setResult] = useState<DeepNumerology | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [historyKey, setHistoryKey] = useState(0);
+  const [openHistoryId, setOpenHistoryId] = useState<number | null>(null);
 
   useEffect(() => {
     api.listProfiles().then(setProfiles).catch(() => {});
@@ -62,6 +65,8 @@ export function NumerologyPage() {
           lang,
         ),
       );
+      setOpenHistoryId(null);
+      setHistoryKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed");
     } finally {
@@ -69,8 +74,21 @@ export function NumerologyPage() {
     }
   }
 
+  async function openHistory(id: number) {
+    setError(null);
+    try {
+      const item = await api.getHistory<DeepNumerology>(id);
+      setResult(item.payload);
+      setNumber(item.label);
+      setOpenHistoryId(id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed");
+    }
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="grid lg:grid-cols-[1fr_240px] gap-4">
+      <div className="space-y-6 min-w-0">
       <div>
         <h1 className="font-display text-2xl">{t("numerology.title")}</h1>
         <p className="text-sm text-muted">{t("numerology.subtitle")}</p>
@@ -228,6 +246,15 @@ export function NumerologyPage() {
           </section>
         </>
       )}
+      </div>
+      <div className="order-first lg:order-none">
+        <HistorySidebar
+          kind="numerology"
+          refreshKey={historyKey}
+          currentId={openHistoryId}
+          onOpen={openHistory}
+        />
+      </div>
     </div>
   );
 }

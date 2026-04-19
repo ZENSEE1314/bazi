@@ -71,6 +71,23 @@ export type BusinessReading = {
   summary: string;
 };
 
+export type HistoryItem = {
+  id: number;
+  kind: "numerology" | "name";
+  label: string;
+  subtype: string | null;
+  created_at: string;
+};
+
+export type HistoryDetail<T = any> = {
+  id: number;
+  kind: string;
+  label: string;
+  subtype: string | null;
+  created_at: string;
+  payload: T;
+};
+
 export type BillingConfig = {
   enabled: boolean;
   publishable_key: string | null;
@@ -638,6 +655,17 @@ export const api = {
     request<void>(`/api/businesses/${id}`, { method: "DELETE" }),
   businessReading: (id: number, lang?: string) =>
     request<BusinessReading>(`/api/businesses/${id}/reading${lang ? `?lang=${lang}` : ""}`),
+
+  // History
+  listHistory: (kind: "numerology" | "name", q?: string) => {
+    const qs = new URLSearchParams({ kind });
+    if (q) qs.set("q", q);
+    return request<HistoryItem[]>(`/api/history?${qs.toString()}`);
+  },
+  getHistory: <T = any>(id: number) =>
+    request<HistoryDetail<T>>(`/api/history/${id}`),
+  deleteHistory: (id: number) =>
+    request<void>(`/api/history/${id}`, { method: "DELETE" }),
 
   // Billing
   billingConfig: () => request<BillingConfig>("/api/billing/config"),

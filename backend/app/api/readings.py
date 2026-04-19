@@ -7,6 +7,7 @@ from datetime import date as _date, datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from ..api.history import save_reading
 from ..db import get_db
 from ..deps import get_current_user
 from ..models import Profile, User
@@ -114,6 +115,12 @@ def deep_numerology(
         result = build_deep_numerology(payload.number, profile)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    save_reading(
+        db, user,
+        kind="numerology",
+        label=payload.number,
+        payload=result.model_dump(mode="json"),
+    )
     db.commit()
     return result
 

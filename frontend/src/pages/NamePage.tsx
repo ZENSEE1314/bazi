@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import { api, ChineseNameReading } from "../api";
+import { HistorySidebar } from "../components/HistorySidebar";
 import { useI18n } from "../i18n";
 
 const elementClass: Record<string, string> = {
@@ -34,6 +35,8 @@ export function NamePage() {
   const [result, setResult] = useState<ChineseNameReading | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [historyKey, setHistoryKey] = useState(0);
+  const [openHistoryId, setOpenHistoryId] = useState<number | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -42,6 +45,8 @@ export function NamePage() {
     setResult(null);
     try {
       setResult(await api.chineseName(name, surnameLen === "" ? undefined : Number(surnameLen)));
+      setOpenHistoryId(null);
+      setHistoryKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed");
     } finally {
@@ -49,8 +54,21 @@ export function NamePage() {
     }
   }
 
+  async function openHistory(id: number) {
+    setError(null);
+    try {
+      const item = await api.getHistory<ChineseNameReading>(id);
+      setResult(item.payload);
+      setName(item.label);
+      setOpenHistoryId(id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed");
+    }
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="grid lg:grid-cols-[1fr_240px] gap-4">
+      <div className="space-y-6 min-w-0">
       <div>
         <h1 className="font-display text-2xl">{t("name.title")}</h1>
         <p className="text-sm text-muted">{t("name.subtitle")}</p>
@@ -152,6 +170,15 @@ export function NamePage() {
           </section>
         </>
       )}
+      </div>
+      <div className="order-first lg:order-none">
+        <HistorySidebar
+          kind="name"
+          refreshKey={historyKey}
+          currentId={openHistoryId}
+          onOpen={openHistory}
+        />
+      </div>
     </div>
   );
 }

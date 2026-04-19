@@ -7,6 +7,7 @@ from fastapi.params import Depends as DependsType  # noqa: F401
 
 from sqlalchemy.orm import Session
 
+from ..api.history import save_reading
 from ..db import get_db
 from ..deps import get_current_user
 from ..models import User
@@ -43,8 +44,7 @@ def chinese_name(
             theme=g["theme"],
         )
 
-    db.commit()
-    return ChineseNameReadingOut(
+    out = ChineseNameReadingOut(
         name=r.name,
         surname=r.surname,
         given=r.given,
@@ -63,3 +63,11 @@ def chinese_name(
         mixed_grids=r.mixed_grids,
         summary=r.summary,
     )
+    save_reading(
+        db, user,
+        kind="name",
+        label=payload.name,
+        payload=out.model_dump(mode="json"),
+    )
+    db.commit()
+    return out

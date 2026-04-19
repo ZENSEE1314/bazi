@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, func
+from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -125,6 +125,23 @@ class ChatMessage(Base):
     )
 
     session: Mapped[ChatSession] = relationship(back_populates="messages")
+
+
+class SavedReading(Base):
+    """A completed numerology or Chinese-name reading, stored for history."""
+    __tablename__ = "saved_readings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    kind: Mapped[str] = mapped_column(String(20), index=True, nullable=False)   # numerology | name
+    label: Mapped[str] = mapped_column(String(120), index=True, nullable=False) # the number string or name
+    subtype: Mapped[str | None] = mapped_column(String(20))                     # phone/bank/car/id/credit for numerology
+    payload: Mapped[str] = mapped_column(Text, nullable=False)                  # JSON reading
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
 
 
 class SubscriptionPayment(Base):

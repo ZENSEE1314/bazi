@@ -305,6 +305,12 @@ const en: Record<string, string> = {
   "numerology.personalized": "Personalized for you",
   "numerology.preferred_digits": "Favored digits (Useful God)",
   "numerology.avoid_digits": "Digits to avoid",
+  "history.title": "History",
+  "history.search": "Search…",
+  "history.empty": "No saved readings yet.",
+  "history.delete": "remove",
+  "history.replay": "Open",
+  "history.when": "Saved",
 
   // Name
   "name.title": "Chinese Name Reading",
@@ -707,6 +713,12 @@ const zh: Record<string, string> = {
   "numerology.personalized": "为您定制",
   "numerology.preferred_digits": "有利数字（用神）",
   "numerology.avoid_digits": "忌讳数字",
+  "history.title": "历史",
+  "history.search": "搜索……",
+  "history.empty": "暂无保存的解读。",
+  "history.delete": "移除",
+  "history.replay": "打开",
+  "history.when": "保存时间",
 
   "name.title": "姓名解读",
   "name.subtitle": "使用五格剖象及 81 数理系统分析中文姓名。",
@@ -1102,6 +1114,12 @@ const ms: Record<string, string> = {
   "numerology.personalized": "Khas untuk anda",
   "numerology.preferred_digits": "Digit pilihan (Dewa Berguna)",
   "numerology.avoid_digits": "Digit yang perlu dielakkan",
+  "history.title": "Sejarah",
+  "history.search": "Cari…",
+  "history.empty": "Belum ada bacaan tersimpan.",
+  "history.delete": "padam",
+  "history.replay": "Buka",
+  "history.when": "Disimpan",
 
   "name.title": "Bacaan Nama Cina",
   "name.subtitle":
