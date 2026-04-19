@@ -159,11 +159,20 @@ if _static_dir.is_dir():
     def _spa_catchall(full_path: str):
         # Serve files directly if they exist (e.g. /favicon.ico), otherwise
         # fall back to index.html for SPA client-side routing.
+        #
+        # IMPORTANT: never let the browser cache index.html. The HTML embeds
+        # a hashed <script src="/assets/index-XXXX.js"> — if the HTML is cached
+        # the user will keep loading the OLD bundle forever and never see
+        # fixes. Hashed assets under /assets can (and should) be cached
+        # aggressively; that's fine because the hash in the filename changes
+        # on every build.
+        no_cache = {"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"}
         if full_path:
             candidate = _static_dir / full_path
             if candidate.is_file():
+                # favicon / robots.txt / etc — static files get default caching.
                 return FileResponse(str(candidate))
         index = _static_dir / "index.html"
         if index.is_file():
-            return FileResponse(str(index))
+            return FileResponse(str(index), headers=no_cache)
         return {"detail": "Frontend not built. Run `npm --prefix frontend run build`."}
