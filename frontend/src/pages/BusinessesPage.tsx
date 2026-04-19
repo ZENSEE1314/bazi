@@ -7,9 +7,13 @@ import { useI18n } from "../i18n";
 const DIRECTIONS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
 
 function toDTLocal(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  // Treat the server value as local/naive — do NOT shift by browser timezone.
+  const clean = iso.replace(/(\.\d+)?Z$/, "").replace(/[+-]\d{2}:?\d{2}$/, "");
+  return clean.length >= 16 ? clean.slice(0, 16) : clean;
+}
+
+function fromDTLocal(v: string): string {
+  return v.length === 16 ? `${v}:00` : v;
 }
 
 export function BusinessesPage() {
@@ -64,7 +68,7 @@ export function BusinessesPage() {
         <BusinessForm mode="create" onDone={() => { setShowForm(false); refresh(); }} onCancel={() => setShowForm(false)} />
       )}
       {editing && (
-        <BusinessForm mode="edit" initial={editing} onDone={() => { setEditing(null); refresh(); }} onCancel={() => setEditing(null)} />
+        <BusinessForm key={editing.id} mode="edit" initial={editing} onDone={() => { setEditing(null); refresh(); }} onCancel={() => setEditing(null)} />
       )}
 
       {loading ? (
@@ -140,7 +144,7 @@ function BusinessForm({ mode, initial, onDone, onCancel }: FormProps) {
       const payload = {
         name,
         chinese_name: chineseName || null,
-        open_datetime: new Date(openDt).toISOString(),
+        open_datetime: fromDTLocal(openDt),
         location: location || null,
         facing_direction: facing || null,
         industry: industry || null,

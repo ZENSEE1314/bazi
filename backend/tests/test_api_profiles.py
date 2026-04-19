@@ -94,6 +94,25 @@ def test_delete_profile(auth_client: TestClient):
     assert auth_client.get(f"/api/profiles/{a['id']}").status_code == 404
 
 
+def test_edit_profile_birth_datetime_persists(auth_client: TestClient):
+    """Regression: users reported edits to birthday reverted after save.
+    The fix is on the frontend side (no TZ round-trip), but this guards the
+    server persistence contract."""
+    p = _make(auth_client, "Alice")
+    assert p["birth_datetime"].startswith("1990-06-15T08:30")
+
+    patch = auth_client.patch(
+        f"/api/profiles/{p['id']}",
+        json={"birth_datetime": "1995-07-20T14:30:00"},
+    )
+    assert patch.status_code == 200, patch.text
+    assert patch.json()["birth_datetime"].startswith("1995-07-20T14:30")
+
+    # Re-fetch to confirm it was persisted, not just echoed.
+    got = auth_client.get(f"/api/profiles/{p['id']}").json()
+    assert got["birth_datetime"].startswith("1995-07-20T14:30")
+
+
 def test_premium_user_bypasses_limit(auth_client: TestClient):
     # Promote the test user to premium directly via DB.
     from backend.app.db import SessionLocal

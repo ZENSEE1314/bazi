@@ -7,10 +7,21 @@ import { useI18n } from "../i18n";
 const FREE_LIMIT = 3;
 
 function toDatetimeLocal(iso: string): string {
-  // Convert ISO to the YYYY-MM-DDTHH:MM shape <input type="datetime-local"> wants.
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  // Convert the naive server datetime string to the YYYY-MM-DDTHH:MM shape
+  // <input type="datetime-local"> wants — WITHOUT any timezone conversion.
+  // Birth time in Ba Zi is local solar time at the birthplace; we never want
+  // to shift it by the browser's timezone.
+  // Handles: "1995-07-20T14:30:00", "1995-07-20T14:30:00.000Z" (strip Z),
+  // or plain "1995-07-20T14:30".
+  const clean = iso.replace(/(\.\d+)?Z$/, "").replace(/[+-]\d{2}:?\d{2}$/, "");
+  return clean.length >= 16 ? clean.slice(0, 16) : clean;
+}
+
+function fromDatetimeLocal(v: string): string {
+  // What we send to the backend. Append seconds if missing so Pydantic parses
+  // cleanly. NEVER call new Date(v).toISOString() here — that would shift the
+  // time by the browser timezone and corrupt the hour pillar.
+  return v.length === 16 ? `${v}:00` : v;
 }
 
 export function ProfilesPage() {
@@ -78,6 +89,7 @@ export function ProfilesPage() {
 
       {editing && (
         <ProfileForm
+          key={editing.id}
           mode="edit"
           initial={editing}
           onDone={() => { setEditing(null); refresh(); }}
@@ -172,7 +184,7 @@ function ProfileForm({ mode, initial, onDone, onCancel }: ProfileFormProps) {
       const payload = {
         name,
         chinese_name: chineseName || null,
-        birth_datetime: new Date(birth).toISOString(),
+        birth_datetime: fromDatetimeLocal(birth),
         relationship_label: label || null,
         birth_location: location || null,
         gender: gender || null,
