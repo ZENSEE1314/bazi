@@ -28,6 +28,10 @@ class User(Base):
     free_fengshui_uses: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     free_chat_messages: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
+    # Wallet — one-shot purchases for users who don't want the unlimited plan.
+    feature_credits: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    extra_profile_slots: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     referral_code: Mapped[str | None] = mapped_column(String(16), unique=True, index=True)
     referred_by_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True

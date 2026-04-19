@@ -65,8 +65,30 @@ def billing_config() -> dict:
     return {
         "enabled": _stripe_enabled(),
         "publishable_key": s.stripe_publishable_key or None,
-        "price_cents": MONTHLY_FEE_CENTS,
-        "price_usd": MONTHLY_FEE_CENTS / 100,
+        # Unlimited monthly plan
+        "monthly": {
+            "price_cents": s.monthly_unlimited_cents,
+            "price_usd": s.monthly_unlimited_cents / 100,
+            "price_id": s.stripe_price_id or None,
+            "available": bool(s.stripe_price_id),
+        },
+        # One-off feature credit
+        "credit": {
+            "price_cents": s.feature_credit_cents,
+            "price_usd": s.feature_credit_cents / 100,
+            "price_id": s.stripe_price_id_credit or None,
+            "available": bool(s.stripe_price_id_credit),
+        },
+        # One-off extra profile slot
+        "profile_slot": {
+            "price_cents": s.profile_slot_cents,
+            "price_usd": s.profile_slot_cents / 100,
+            "price_id": s.stripe_price_id_profile_slot or None,
+            "available": bool(s.stripe_price_id_profile_slot),
+        },
+        # Legacy shape kept for any existing frontend still reading it:
+        "price_cents": s.monthly_unlimited_cents,
+        "price_usd": s.monthly_unlimited_cents / 100,
         "price_id": s.stripe_price_id or None,
         "interval": "month",
     }
@@ -111,6 +133,111 @@ def create_checkout_session(
         metadata={"app_user_id": str(user.id)},
     )
     return {"url": session["url"], "id": session["id"]}
+
+
+def _ensure_stripe_customer(db: Session, user: User) -> str:
+    if user.stripe_customer_id:
+        return user.stripe_customer_id
+    customer = stripe.Customer.create(
+        email=user.email,
+        name=user.display_name or None,
+        metadata={
+            "app_user_id": str(user.id),
+            "referral_code": user.referral_code or "",
+        },
+    )
+    user.stripe_customer_id = customer["id"]
+    db.commit()
+    db.refresh(user)
+    return user.stripe_customer_id
+
+
+def _one_shot_checkout(
+    request: Request,
+    db: Session,
+    user: User,
+    price_id: str,
+    quantity: int,
+    purchase_type: str,
+) -> dict:
+    """Create a one-time Stripe Checkout session that grants credits/slots
+    to ``user`` on successful webhook receipt."""
+    _init_stripe()
+    s = _settings()
+    customer = _ensure_stripe_customer(db, user)
+    base = _public_base(request)
+    success_url = f"{base}{s.stripe_success_path}&session={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{base}{s.stripe_cancel_path}"
+    session = stripe.checkout.Session.create(
+        mode="payment",
+        customer=customer,
+        line_items=[{"price": price_id, "quantity": quantity}],
+        success_url=success_url,
+        cancel_url=cancel_url,
+        client_reference_id=str(user.id),
+        metadata={
+            "app_user_id": str(user.id),
+            "purchase_type": purchase_type,
+            "quantity": str(quantity),
+        },
+        payment_intent_data={
+            "metadata": {
+                "app_user_id": str(user.id),
+                "purchase_type": purchase_type,
+                "quantity": str(quantity),
+            },
+        },
+    )
+    return {"url": session["url"], "id": session["id"]}
+
+
+@router.post("/checkout/credit")
+def checkout_credit(
+    request: Request,
+    quantity: int = 1,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Buy N feature credits at $8 each. 1 credit = 1 additional feature use."""
+    s = _settings()
+    if not s.stripe_price_id_credit:
+        raise HTTPException(
+            status_code=503,
+            detail="Per-use credit purchases are not configured.",
+        )
+    if quantity < 1 or quantity > 20:
+        raise HTTPException(status_code=400, detail="Quantity must be between 1 and 20.")
+    return _one_shot_checkout(
+        request, db, user,
+        price_id=s.stripe_price_id_credit,
+        quantity=quantity,
+        purchase_type="feature_credit",
+    )
+
+
+@router.post("/checkout/profile_slot")
+def checkout_profile_slot(
+    request: Request,
+    quantity: int = 1,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Buy N extra profile slots at $16 each. Each slot raises the permanent
+    profile cap by 1."""
+    s = _settings()
+    if not s.stripe_price_id_profile_slot:
+        raise HTTPException(
+            status_code=503,
+            detail="Profile-slot purchases are not configured.",
+        )
+    if quantity < 1 or quantity > 10:
+        raise HTTPException(status_code=400, detail="Quantity must be between 1 and 10.")
+    return _one_shot_checkout(
+        request, db, user,
+        price_id=s.stripe_price_id_profile_slot,
+        quantity=quantity,
+        purchase_type="profile_slot",
+    )
 
 
 @router.post("/portal")
@@ -186,24 +313,55 @@ def _handle_subscription_deleted(db: Session, subscription: dict[str, Any]) -> N
 
 
 def _handle_checkout_completed(db: Session, session_obj: dict[str, Any]) -> None:
-    """When Checkout completes, remember the subscription id on the user."""
+    """When Checkout completes, remember the subscription id OR grant credits
+    / slots depending on the purchase type carried in session metadata."""
     customer_id = session_obj.get("customer")
     subscription_id = session_obj.get("subscription")
-    user_id_raw = session_obj.get("client_reference_id") or (session_obj.get("metadata") or {}).get("app_user_id")
-    if not customer_id:
-        return
-    user = _find_user_by_customer(db, customer_id)
+    metadata = session_obj.get("metadata") or {}
+    user_id_raw = session_obj.get("client_reference_id") or metadata.get("app_user_id")
+
+    user: User | None = None
+    if customer_id:
+        user = _find_user_by_customer(db, customer_id)
     if user is None and user_id_raw:
         try:
             user = db.get(User, int(user_id_raw))
         except (TypeError, ValueError):
             user = None
-        if user is not None:
+        if user is not None and customer_id:
             user.stripe_customer_id = customer_id
     if user is None:
         return
-    if subscription_id:
-        user.stripe_subscription_id = subscription_id
+
+    mode = session_obj.get("mode")
+    purchase_type = metadata.get("purchase_type")
+    amount_paid = session_obj.get("amount_total") or session_obj.get("amount_subtotal") or 0
+
+    if mode == "subscription":
+        if subscription_id:
+            user.stripe_subscription_id = subscription_id
+    elif mode == "payment" and purchase_type in ("feature_credit", "profile_slot"):
+        qty_raw = metadata.get("quantity") or "1"
+        try:
+            qty = max(1, int(qty_raw))
+        except ValueError:
+            qty = 1
+        if purchase_type == "feature_credit":
+            user.feature_credits = (user.feature_credits or 0) + qty
+        elif purchase_type == "profile_slot":
+            user.extra_profile_slots = (user.extra_profile_slots or 0) + qty
+
+        # Pay referral commissions on the one-off too.
+        if amount_paid and user.id:
+            period = datetime.now(tz=timezone.utc).strftime("%Y-%m")
+            try:
+                record_payment_and_commissions(
+                    db, user, period_month=period,
+                    amount_cents=int(amount_paid),
+                    note=f"stripe:{purchase_type}:{qty}",
+                )
+            except Exception:
+                pass
     db.commit()
 
 

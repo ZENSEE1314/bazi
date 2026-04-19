@@ -30,6 +30,8 @@ class UserOut(BaseModel):
     is_admin: bool
     referral_code: str | None
     referred_by_id: int | None
+    feature_credits: int = 0
+    extra_profile_slots: int = 0
     created_at: datetime
 
 

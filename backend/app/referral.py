@@ -1,9 +1,10 @@
 """Referral code generation + commission posting logic.
 
-3-tier commission structure:
-  Tier 1 (direct referrer)       : 20% of $19.00 = $3.80
-  Tier 2 (referrer's referrer)   : 10% of $19.00 = $1.90
-  Tier 3 (grand-grand-referrer)  :  5% of $19.00 = $0.95
+3-tier commission structure (percentages apply to whatever the payer paid,
+whether it's the $88/mo subscription or a one-off credit / profile slot):
+  Tier 1 (direct referrer)       : 20%
+  Tier 2 (referrer's referrer)   : 10%
+  Tier 3 (grand-grand-referrer)  :  5%
 """
 
 from __future__ import annotations
@@ -14,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from .models import Commission, SubscriptionPayment, User
 
-MONTHLY_FEE_CENTS = 1900  # $19.00
+MONTHLY_FEE_CENTS = 8800  # $88.00
 TIER_BPS = (2000, 1000, 500)  # basis points: 20%, 10%, 5%
 
 # Human-readable ambiguous-free alphabet (no 0/O/1/I).

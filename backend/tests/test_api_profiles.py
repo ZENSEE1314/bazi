@@ -45,7 +45,9 @@ def test_free_tier_limit_is_one(auth_client: TestClient):
         json={"name": "P2", "birth_datetime": "1990-01-01T00:00:00"},
     )
     assert resp.status_code == 402
-    assert "Free tier" in resp.json()["detail"]
+    detail = resp.json()["detail"]
+    # Message should hint that more slots cost $16 or the $88/mo plan unlocks all.
+    assert "$16" in detail and "$88" in detail
 
 
 def test_setting_main_unsets_other_mains(auth_client: TestClient):

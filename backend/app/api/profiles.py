@@ -44,12 +44,15 @@ def create_profile(
     settings = get_settings()
     existing_count = db.query(Profile).filter(Profile.owner_id == user.id).count()
 
-    if not user.is_premium and existing_count >= settings.free_profile_limit:
+    effective_limit = settings.free_profile_limit + (user.extra_profile_slots or 0)
+    if not user.is_premium and existing_count >= effective_limit:
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED,
             detail=(
-                f"Free tier is limited to {settings.free_profile_limit} profiles. "
-                "Upgrade to Premium for unlimited profiles."
+                f"You have {existing_count} of {effective_limit} profile slot(s) in use. "
+                f"Buy an extra slot for ${settings.profile_slot_cents / 100:.0f} each, "
+                f"or upgrade to the ${settings.monthly_unlimited_cents / 100:.0f}/month "
+                "unlimited plan."
             ),
         )
 

@@ -19,6 +19,8 @@ export type User = {
   is_admin: boolean;
   referral_code: string | null;
   referred_by_id: number | null;
+  feature_credits: number;
+  extra_profile_slots: number;
   created_at: string;
   stripe_customer_id?: string | null;
   stripe_subscription_id?: string | null;
@@ -88,9 +90,21 @@ export type HistoryDetail<T = any> = {
   payload: T;
 };
 
+export type BillingOffer = {
+  price_cents: number;
+  price_usd: number;
+  price_id: string | null;
+  available: boolean;
+};
+
 export type BillingConfig = {
   enabled: boolean;
   publishable_key: string | null;
+  // New granular tiers:
+  monthly: BillingOffer;
+  credit: BillingOffer;
+  profile_slot: BillingOffer;
+  // Legacy fields (kept for compatibility):
   price_cents: number;
   price_usd: number;
   price_id: string | null;
@@ -842,6 +856,16 @@ export const api = {
   billingConfig: () => request<BillingConfig>("/api/billing/config"),
   billingCheckout: () =>
     request<{ url: string; id: string }>("/api/billing/checkout", { method: "POST" }),
+  billingBuyCredit: (quantity: number = 1) =>
+    request<{ url: string; id: string }>(
+      `/api/billing/checkout/credit?quantity=${quantity}`,
+      { method: "POST" },
+    ),
+  billingBuyProfileSlot: (quantity: number = 1) =>
+    request<{ url: string; id: string }>(
+      `/api/billing/checkout/profile_slot?quantity=${quantity}`,
+      { method: "POST" },
+    ),
   billingPortal: () =>
     request<{ url: string }>("/api/billing/portal", { method: "POST" }),
 };

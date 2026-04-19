@@ -81,6 +81,8 @@ def _ensure_user_columns() -> None:
         ("free_chat_messages", "INTEGER NOT NULL DEFAULT 0"),
         ("stripe_customer_id", "VARCHAR(64)"),
         ("stripe_subscription_id", "VARCHAR(64)"),
+        ("feature_credits", "INTEGER NOT NULL DEFAULT 0"),
+        ("extra_profile_slots", "INTEGER NOT NULL DEFAULT 0"),
     ]
     with engine.begin() as conn:
         for col_name, ddl in additions:
