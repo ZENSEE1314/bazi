@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { api, DeepNumerology, Profile } from "../api";
+import { api, DeepNumerology, GeneratedNumberResponse, Profile } from "../api";
 import { ElementBar, ScoreRing } from "../components/PillarCard";
 import { HistorySidebar } from "../components/HistorySidebar";
 import { useI18n } from "../i18n";
@@ -47,6 +47,9 @@ export function NumerologyPage() {
   const [busy, setBusy] = useState(false);
   const [historyKey, setHistoryKey] = useState(0);
   const [openHistoryId, setOpenHistoryId] = useState<number | null>(null);
+  const [generated, setGenerated] = useState<GeneratedNumberResponse | null>(null);
+  const [genBusy, setGenBusy] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
 
   useEffect(() => {
     api.listProfiles().then(setProfiles).catch(() => {});
@@ -83,6 +86,41 @@ export function NumerologyPage() {
       setOpenHistoryId(id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed");
+    }
+  }
+
+  async function generate(purposeArg?: string, lengthArg?: number, count = 10, prefixArg?: string) {
+    if (profileId === "") return;
+    setGenBusy(true);
+    setGenError(null);
+    try {
+      const out = await api.numerologyGenerate(
+        Number(profileId),
+        purposeArg || type,
+        lengthArg,
+        count,
+        prefixArg,
+      );
+      setGenerated(out);
+    } catch (err) {
+      setGenError(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setGenBusy(false);
+    }
+  }
+
+  async function useGenerated(n: string) {
+    setNumber(n);
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    try {
+      setResult(await api.numerologyDeep(n, profileId === "" ? undefined : Number(profileId), lang));
+      setHistoryKey((k) => k + 1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -136,6 +174,20 @@ export function NumerologyPage() {
       </div>
 
       {error && <div className="text-fire text-sm">{error}</div>}
+
+      {/* Lucky number generator — visible once a profile is linked */}
+      <GeneratorCard
+        profileLinked={profileId !== ""}
+        profileName={profiles.find((p) => p.id === profileId)?.name ?? ""}
+        purpose={type}
+        busy={genBusy}
+        error={genError}
+        generated={generated}
+        onGenerate={(purposeArg, lengthArg, count, prefixArg) =>
+          generate(purposeArg, lengthArg, count, prefixArg)
+        }
+        onUse={useGenerated}
+      />
 
       {result && (
         <>
@@ -256,5 +308,156 @@ export function NumerologyPage() {
         />
       </div>
     </div>
+  );
+}
+
+
+type GenProps = {
+  profileLinked: boolean;
+  profileName: string;
+  purpose: string;
+  busy: boolean;
+  error: string | null;
+  generated: GeneratedNumberResponse | null;
+  onGenerate: (purpose: string, length: number | undefined, count: number, prefix: string) => void;
+  onUse: (n: string) => void;
+};
+
+function GeneratorCard({
+  profileLinked,
+  profileName,
+  purpose,
+  busy,
+  error,
+  generated,
+  onGenerate,
+  onUse,
+}: GenProps) {
+  const { t } = useI18n();
+  const [localPurpose, setLocalPurpose] = useState(purpose);
+  const [length, setLength] = useState<number | "">("");
+  const [count, setCount] = useState(10);
+  const [prefix, setPrefix] = useState("");
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const header = profileLinked
+    ? t("gen.subtitle").replace("{profile}", profileName)
+    : t("gen.need_profile");
+
+  async function copy(s: string) {
+    try {
+      await navigator.clipboard.writeText(s);
+      setCopied(s);
+      setTimeout(() => setCopied(null), 1500);
+    } catch {/* ignore */}
+  }
+
+  return (
+    <section className="rounded-2xl border border-earth/30 bg-gradient-to-br from-parchment via-white to-earth-soft/40 p-5">
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+        <div className="text-xs uppercase tracking-wider text-muted">
+          ✨ {t("gen.title")}
+        </div>
+      </div>
+      <p className="text-sm text-muted mb-3">{header}</p>
+
+      {profileLinked && (
+        <>
+          <div className="grid sm:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 items-end">
+            <label className="block">
+              <span className="text-xs text-muted">{t("gen.purpose")}</span>
+              <select className="input mt-1" value={localPurpose} onChange={(e) => setLocalPurpose(e.target.value)}>
+                <option value="phone">{t("numerology.type_phone")}</option>
+                <option value="bank">{t("numerology.type_bank")}</option>
+                <option value="car">{t("numerology.type_car")}</option>
+                <option value="id">{t("numerology.type_id")}</option>
+                <option value="credit">{t("numerology.type_credit")}</option>
+                <option value="custom">custom</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-xs text-muted">{t("gen.length")}</span>
+              <input
+                type="number"
+                min={4}
+                max={20}
+                className="input mt-1"
+                value={length}
+                onChange={(e) => setLength(e.target.value === "" ? "" : Number(e.target.value))}
+                placeholder="auto"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs text-muted">{t("gen.count")}</span>
+              <input
+                type="number"
+                min={1}
+                max={30}
+                className="input mt-1"
+                value={count}
+                onChange={(e) => setCount(Number(e.target.value))}
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs text-muted">{t("gen.prefix")}</span>
+              <input
+                className="input mt-1 font-mono"
+                value={prefix}
+                onChange={(e) => setPrefix(e.target.value)}
+                placeholder={t("gen.prefix_ph")}
+                maxLength={8}
+              />
+            </label>
+            <button
+              type="button"
+              disabled={busy}
+              className="btn-primary"
+              onClick={() => onGenerate(localPurpose, length === "" ? undefined : Number(length), count, prefix)}
+            >
+              {busy ? t("gen.generating") : t("gen.button")}
+            </button>
+          </div>
+
+          {error && <div className="text-fire text-sm mt-2">{error}</div>}
+
+          {generated && generated.candidates.length > 0 && (
+            <div className="mt-4">
+              <div className="text-xs text-muted mb-2">
+                Useful God: <b>{generated.useful_god}</b> · favored digits {generated.preferred_digits.join(", ")} · avoid {generated.digits_to_avoid.join(", ") || "—"}
+              </div>
+              <ol className="space-y-2">
+                {generated.candidates.map((c, i) => (
+                  <li key={i} className="flex items-center gap-2 flex-wrap rounded-xl border border-ink/10 bg-white p-3">
+                    <span className="text-xs text-muted w-6">{i + 1}.</span>
+                    <span className="font-mono text-base font-semibold tracking-wider">{c.number}</span>
+                    <span className="chip element-wood text-xs">W {c.wealth}</span>
+                    <span className="chip element-metal text-xs">S {c.safety}</span>
+                    <span className="chip element-water text-xs">H {c.health}</span>
+                    <span className="chip element-earth text-xs">★ {c.overall}</span>
+                    <span className="text-[11px] text-muted">
+                      ✓ {c.auspicious_pair_count} / ✗ {c.inauspicious_pair_count} {t("gen.pairs")}
+                    </span>
+                    <div className="ml-auto flex gap-2">
+                      <button
+                        className="btn-ghost text-xs"
+                        onClick={() => copy(c.number)}
+                      >
+                        {copied === c.number ? t("ref.copied") : t("gen.copy")}
+                      </button>
+                      <button
+                        className="btn-primary text-xs py-1"
+                        onClick={() => onUse(c.number)}
+                      >
+                        {t("gen.use")}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </>
+      )}
+    </section>
   );
 }

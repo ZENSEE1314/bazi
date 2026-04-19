@@ -636,6 +636,38 @@ class NumerologyRequestDeep(BaseModel):
     language: str | None = "en"
 
 
+class NumerologyGenerateRequest(BaseModel):
+    profile_id: int
+    purpose: str = Field(default="phone", pattern="^(phone|bank|car|id|credit|custom)$")
+    length: int | None = Field(default=None, ge=4, le=20)
+    count: int = Field(default=10, ge=1, le=30)
+    prefix: str = Field(default="", max_length=8)
+
+
+class GeneratedNumberOut(BaseModel):
+    number: str
+    overall: int
+    wealth: int
+    safety: int
+    health: int
+    auspicious_pair_count: int
+    inauspicious_pair_count: int
+    dominant_element: str
+    favored_digit_count: int
+    avoid_digit_count: int
+
+
+class GeneratedNumberResponse(BaseModel):
+    profile_id: int
+    profile_name: str
+    useful_god: str
+    avoid_god: str
+    preferred_digits: list[int]
+    digits_to_avoid: list[int]
+    purpose: str
+    candidates: list[GeneratedNumberOut]
+
+
 class NumberSuggestion(BaseModel):
     original: str
     issues: list[str]

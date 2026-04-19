@@ -403,6 +403,30 @@ export type NumberSuggestion = {
   suggestions: string[];
 };
 
+export type GeneratedNumberOut = {
+  number: string;
+  overall: number;
+  wealth: number;
+  safety: number;
+  health: number;
+  auspicious_pair_count: number;
+  inauspicious_pair_count: number;
+  dominant_element: string;
+  favored_digit_count: number;
+  avoid_digit_count: number;
+};
+
+export type GeneratedNumberResponse = {
+  profile_id: number;
+  profile_name: string;
+  useful_god: string;
+  avoid_god: string;
+  preferred_digits: number[];
+  digits_to_avoid: number[];
+  purpose: string;
+  candidates: GeneratedNumberOut[];
+};
+
 export type DeepNumerology = {
   number: string;
   scores: Numerology;
@@ -613,6 +637,11 @@ export const api = {
     request<DeepNumerology>("/api/numerology/deep", {
       method: "POST",
       body: JSON.stringify({ number, profile_id, language }),
+    }),
+  numerologyGenerate: (profile_id: number, purpose: string, length?: number, count: number = 10, prefix?: string) =>
+    request<GeneratedNumberResponse>("/api/numerology/generate", {
+      method: "POST",
+      body: JSON.stringify({ profile_id, purpose, length, count, prefix }),
     }),
   chineseName: (name: string, surname_length?: number) =>
     request<ChineseNameReading>("/api/name/chinese", {

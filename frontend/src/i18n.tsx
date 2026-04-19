@@ -312,6 +312,20 @@ const en: Record<string, string> = {
   "history.replay": "Open",
   "history.when": "Saved",
 
+  "gen.title": "Lucky Number Generator",
+  "gen.subtitle": "Generate numbers tuned to {profile}'s Day Master and Useful God.",
+  "gen.purpose": "For",
+  "gen.length": "Length",
+  "gen.count": "How many",
+  "gen.prefix": "Prefix (optional)",
+  "gen.prefix_ph": "e.g. +60",
+  "gen.button": "Generate",
+  "gen.generating": "Generating…",
+  "gen.use": "Analyse this",
+  "gen.copy": "Copy",
+  "gen.need_profile": "Link a profile above to unlock personalised generation.",
+  "gen.pairs": "pairs",
+
   // Name
   "name.title": "Chinese Name Reading",
   "name.subtitle":
@@ -736,6 +750,20 @@ const zh: Record<string, string> = {
   "history.replay": "打开",
   "history.when": "保存时间",
 
+  "gen.title": "吉数生成器",
+  "gen.subtitle": "为 {profile} 的日主与用神生成匹配号码。",
+  "gen.purpose": "用途",
+  "gen.length": "位数",
+  "gen.count": "数量",
+  "gen.prefix": "前缀（选填）",
+  "gen.prefix_ph": "如 +60",
+  "gen.button": "生成",
+  "gen.generating": "生成中……",
+  "gen.use": "深入解读",
+  "gen.copy": "复制",
+  "gen.need_profile": "请先于上方绑定命盘即可生成专属吉数。",
+  "gen.pairs": "对",
+
   "name.title": "姓名解读",
   "name.subtitle": "使用五格剖象及 81 数理系统分析中文姓名。",
   "name.enter": "姓名（中文）",
@@ -1152,6 +1180,20 @@ const ms: Record<string, string> = {
   "history.delete": "padam",
   "history.replay": "Buka",
   "history.when": "Disimpan",
+
+  "gen.title": "Penjana Nombor Bertuah",
+  "gen.subtitle": "Hasilkan nombor yang diselaraskan dengan Day Master dan Dewa Berguna {profile}.",
+  "gen.purpose": "Untuk",
+  "gen.length": "Panjang",
+  "gen.count": "Kuantiti",
+  "gen.prefix": "Awalan (pilihan)",
+  "gen.prefix_ph": "cth. +60",
+  "gen.button": "Jana",
+  "gen.generating": "Menjana…",
+  "gen.use": "Baca mendalam",
+  "gen.copy": "Salin",
+  "gen.need_profile": "Ikat profil di atas untuk menjana nombor peribadi.",
+  "gen.pairs": "pasangan",
 
   "name.title": "Bacaan Nama Cina",
   "name.subtitle":

@@ -21,6 +21,9 @@ from ..schemas import (
     DeepBaZiReading,
     DeepCompatibility,
     DeepNumerologyReading,
+    GeneratedNumberOut,
+    GeneratedNumberResponse,
+    NumerologyGenerateRequest,
     NumerologyReading,
     NumerologyRequest,
     NumerologyRequestDeep,
@@ -97,6 +100,47 @@ def profile_deep(
 ) -> DeepBaZiReading:
     profile = _owned_profile(db, user, profile_id)
     return build_deep_bazi(profile.birth_datetime, profile.gender, lang=lang)
+
+
+@router.post("/numerology/generate", response_model=GeneratedNumberResponse)
+def generate_lucky_numbers(
+    payload: NumerologyGenerateRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> GeneratedNumberResponse:
+    """Generate candidate numbers optimised for a profile's Useful God.
+
+    Free for both tiers — uses no quota since no new reading is stored.
+    """
+    from ...core.bazi.calculator import four_pillars
+    from ...core.bazi.guidance import ELEMENT_GUIDANCE
+    from ...core.bazi.strength import day_master_strength
+    from ...core.numerology.generator import generate_numbers
+
+    profile = db.get(Profile, payload.profile_id)
+    if profile is None or profile.owner_id != user.id:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    fp = four_pillars(profile.birth_datetime)
+    dms = day_master_strength(fp)
+    candidates = generate_numbers(
+        useful_god=dms.useful_god,
+        avoid_god=dms.avoid_god,
+        purpose=payload.purpose,
+        length=payload.length,
+        count=payload.count,
+        prefix=payload.prefix,
+    )
+    return GeneratedNumberResponse(
+        profile_id=profile.id,
+        profile_name=profile.name,
+        useful_god=dms.useful_god,
+        avoid_god=dms.avoid_god,
+        preferred_digits=ELEMENT_GUIDANCE.get(dms.useful_god, {}).get("numbers", []),
+        digits_to_avoid=ELEMENT_GUIDANCE.get(dms.avoid_god, {}).get("numbers", []),
+        purpose=payload.purpose,
+        candidates=[GeneratedNumberOut(**c.__dict__) for c in candidates],
+    )
 
 
 @router.post("/numerology/deep", response_model=DeepNumerologyReading)
