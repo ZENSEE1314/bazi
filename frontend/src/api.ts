@@ -589,6 +589,95 @@ async function request<T>(
   return resp.json();
 }
 
+// --- Face reading (面相) ---------------------------------------------------
+export type FaceReadingRequest = {
+  profile_id?: number;
+  face_shape: "round" | "square" | "oval" | "long" | "heart" | "diamond";
+  forehead: "high" | "medium" | "low" | "narrow" | "wide";
+  brows: "thick" | "medium" | "thin" | "arched" | "straight";
+  eyes: "big" | "medium" | "small" | "phoenix" | "deep";
+  nose: "straight" | "high" | "flat" | "hooked" | "small";
+  mouth: "full" | "medium" | "thin" | "wide" | "small";
+  ears: "large" | "medium" | "small" | "attached" | "detached";
+  chin: "strong" | "rounded" | "pointed" | "double" | "receding";
+  cheeks: "high" | "full" | "flat" | "hollow";
+  skin: "bright" | "neutral" | "dull" | "ruddy";
+};
+
+export type FaceFeature = {
+  feature: string;
+  trait: string;
+  palace: string;
+  score: number;
+  verdict: string;
+};
+
+export type FaceReading = {
+  face_shape: string;
+  governing_element: string;
+  personality_summary: string;
+  features: FaceFeature[];
+  career_score: number;
+  wealth_score: number;
+  relationships_score: number;
+  health_score: number;
+  family_score: number;
+  overall_score: number;
+  san_ting_upper: string;
+  san_ting_middle: string;
+  san_ting_lower: string;
+  strengths: string[];
+  watchouts: string[];
+  recommendations: string[];
+};
+
+// --- Palm reading (手相) ---------------------------------------------------
+export type PalmReadingRequest = {
+  profile_id?: number;
+  hand_shape: "earth" | "air" | "water" | "fire";
+  dominant_hand: "left" | "right";
+  finger_length: "short" | "medium" | "long";
+  life_length: "long" | "medium" | "short" | "absent";
+  life_depth: "deep" | "medium" | "shallow" | "broken";
+  heart_length: "long" | "medium" | "short" | "absent";
+  heart_depth: "deep" | "medium" | "shallow" | "broken";
+  head_length: "long" | "medium" | "short" | "absent";
+  head_depth: "deep" | "medium" | "shallow" | "broken";
+  fate_length: "long" | "medium" | "short" | "absent";
+  fate_depth: "deep" | "medium" | "shallow" | "broken";
+  marriage_lines: "none" | "one" | "two" | "many";
+};
+
+export type PalmLine = {
+  line: string;
+  chinese: string;
+  score: number;
+  length_verdict: string;
+  depth_verdict: string;
+};
+
+export type PalmReading = {
+  hand_shape: string;
+  hand_shape_label: string;
+  governing_element: string;
+  personality_summary: string;
+  dominant_hand: string;
+  finger_interpretation: string;
+  lines: PalmLine[];
+  vitality_score: number;
+  love_score: number;
+  intellect_score: number;
+  career_score: number;
+  marriage_score: number;
+  overall_score: number;
+  life_path: string;
+  love_path: string;
+  career_path: string;
+  strengths: string[];
+  watchouts: string[];
+  recommendations: string[];
+};
+
 export const api = {
   register: (email: string, password: string, display_name?: string, referral_code?: string) =>
     request<{ access_token: string; user: User }>("/api/auth/register", {
@@ -724,8 +813,22 @@ export const api = {
   businessReading: (id: number, lang?: string) =>
     request<BusinessReading>(`/api/businesses/${id}/reading${lang ? `?lang=${lang}` : ""}`),
 
+  // Face reading
+  faceReading: (req: FaceReadingRequest) =>
+    request<FaceReading>("/api/face/reading", {
+      method: "POST",
+      body: JSON.stringify(req),
+    }),
+
+  // Palm reading
+  palmReading: (req: PalmReadingRequest) =>
+    request<PalmReading>("/api/palm/reading", {
+      method: "POST",
+      body: JSON.stringify(req),
+    }),
+
   // History
-  listHistory: (kind: "numerology" | "name", q?: string) => {
+  listHistory: (kind: "numerology" | "name" | "face" | "palm", q?: string) => {
     const qs = new URLSearchParams({ kind });
     if (q) qs.set("q", q);
     return request<HistoryItem[]>(`/api/history?${qs.toString()}`);

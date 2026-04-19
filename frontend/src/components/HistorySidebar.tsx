@@ -3,7 +3,7 @@ import { api, HistoryItem } from "../api";
 import { useI18n } from "../i18n";
 
 type Props = {
-  kind: "numerology" | "name";
+  kind: "numerology" | "name" | "face" | "palm";
   refreshKey?: number;                        // bump to force reload
   onOpen: (id: number) => void;
   currentId?: number | null;

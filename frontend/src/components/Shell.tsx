@@ -10,6 +10,8 @@ function buildLinks(t: (k: string) => string, isAdmin: boolean, isPremium: boole
     { to: "/numerology", label: t("nav.numbers") },
     { to: "/name", label: t("nav.name") },
     { to: "/fengshui", label: t("nav.fengshui") },
+    { to: "/face", label: t("nav.face") },
+    { to: "/palm", label: t("nav.palm") },
     { to: "/compatibility", label: t("nav.compatibility") },
     { to: "/chat", label: t("nav.chat") },
     { to: "/referrals", label: t("nav.referrals") },

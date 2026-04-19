@@ -16,6 +16,8 @@ import { AdminPage } from "./pages/AdminPage";
 import { UpgradePage } from "./pages/UpgradePage";
 import { BusinessesPage } from "./pages/BusinessesPage";
 import { BusinessDetailPage } from "./pages/BusinessDetailPage";
+import { FaceReadingPage } from "./pages/FaceReadingPage";
+import { PalmReadingPage } from "./pages/PalmReadingPage";
 
 function Private({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
@@ -56,6 +58,8 @@ export default function App() {
           <Route path="/numerology" element={<NumerologyPage />} />
           <Route path="/name" element={<NamePage />} />
           <Route path="/fengshui" element={<FengShuiPage />} />
+          <Route path="/face" element={<FaceReadingPage />} />
+          <Route path="/palm" element={<PalmReadingPage />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/compatibility" element={<CompatibilityPage />} />
           <Route path="/businesses" element={<BusinessesPage />} />

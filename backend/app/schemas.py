@@ -691,3 +691,94 @@ class DeepNumerologyReading(BaseModel):
     preferred_digits: list[int] = Field(default_factory=list)
     digits_to_avoid: list[int] = Field(default_factory=list)
     suggestion: NumberSuggestion | None = None
+
+
+# --- Face reading (面相) -----------------------------------------------------
+
+class FaceReadingRequest(BaseModel):
+    profile_id: int | None = None
+    face_shape: str = Field(pattern="^(round|square|oval|long|heart|diamond)$")
+    forehead:   str = Field(pattern="^(high|medium|low|narrow|wide)$")
+    brows:      str = Field(pattern="^(thick|medium|thin|arched|straight)$")
+    eyes:       str = Field(pattern="^(big|medium|small|phoenix|deep)$")
+    nose:       str = Field(pattern="^(straight|high|flat|hooked|small)$")
+    mouth:      str = Field(pattern="^(full|medium|thin|wide|small)$")
+    ears:       str = Field(pattern="^(large|medium|small|attached|detached)$")
+    chin:       str = Field(pattern="^(strong|rounded|pointed|double|receding)$")
+    cheeks:     str = Field(pattern="^(high|full|flat|hollow)$")
+    skin:       str = Field(pattern="^(bright|neutral|dull|ruddy)$")
+
+
+class FaceFeatureOut(BaseModel):
+    feature: str
+    trait: str
+    palace: str
+    score: int
+    verdict: str
+
+
+class FaceReadingOut(BaseModel):
+    face_shape: str
+    governing_element: str
+    personality_summary: str
+    features: list[FaceFeatureOut]
+    career_score: int
+    wealth_score: int
+    relationships_score: int
+    health_score: int
+    family_score: int
+    overall_score: int
+    san_ting_upper: str
+    san_ting_middle: str
+    san_ting_lower: str
+    strengths: list[str]
+    watchouts: list[str]
+    recommendations: list[str]
+
+
+# --- Palm reading (手相) -----------------------------------------------------
+
+class PalmReadingRequest(BaseModel):
+    profile_id: int | None = None
+    hand_shape:    str = Field(pattern="^(earth|air|water|fire)$")
+    dominant_hand: str = Field(pattern="^(left|right)$")
+    finger_length: str = Field(pattern="^(short|medium|long)$")
+    life_length:   str = Field(pattern="^(long|medium|short|absent)$")
+    life_depth:    str = Field(pattern="^(deep|medium|shallow|broken)$")
+    heart_length:  str = Field(pattern="^(long|medium|short|absent)$")
+    heart_depth:   str = Field(pattern="^(deep|medium|shallow|broken)$")
+    head_length:   str = Field(pattern="^(long|medium|short|absent)$")
+    head_depth:    str = Field(pattern="^(deep|medium|shallow|broken)$")
+    fate_length:   str = Field(pattern="^(long|medium|short|absent)$")
+    fate_depth:    str = Field(pattern="^(deep|medium|shallow|broken)$")
+    marriage_lines: str = Field(default="one", pattern="^(none|one|two|many)$")
+
+
+class PalmLineOut(BaseModel):
+    line: str
+    chinese: str
+    score: int
+    length_verdict: str
+    depth_verdict: str
+
+
+class PalmReadingOut(BaseModel):
+    hand_shape: str
+    hand_shape_label: str
+    governing_element: str
+    personality_summary: str
+    dominant_hand: str
+    finger_interpretation: str
+    lines: list[PalmLineOut]
+    vitality_score: int
+    love_score: int
+    intellect_score: int
+    career_score: int
+    marriage_score: int
+    overall_score: int
+    life_path: str
+    love_path: str
+    career_path: str
+    strengths: list[str]
+    watchouts: list[str]
+    recommendations: list[str]

@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .api import admin, auth, billing, businesses, chat, fengshui, history, name, profiles, readings, referrals
+from .api import admin, auth, billing, businesses, chat, faceread, fengshui, history, name, palmread, profiles, readings, referrals
 from .config import get_settings
 from .db import Base, engine
 
@@ -136,6 +136,8 @@ app.include_router(referrals.router)
 app.include_router(admin.router)
 app.include_router(billing.router)
 app.include_router(businesses.router)
+app.include_router(faceread.router)
+app.include_router(palmread.router)
 app.include_router(history.router)
 
 

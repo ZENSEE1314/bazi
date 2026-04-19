@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/history", tags=["history"])
 
 @router.get("", response_model=list[HistoryItemOut])
 def list_history(
-    kind: str = Query(..., pattern="^(numerology|name)$"),
+    kind: str = Query(..., pattern="^(numerology|name|face|palm)$"),
     q: str | None = Query(default=None, description="case-insensitive search on label"),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
