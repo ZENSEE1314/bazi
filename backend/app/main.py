@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .api import auth, chat, fengshui, name, profiles, readings
+from .api import admin, auth, chat, fengshui, name, profiles, readings, referrals
 from .config import get_settings
 from .db import Base, engine
 
@@ -37,6 +37,8 @@ def _init_db() -> None:
     # first boot and for dev SQLite.
     Base.metadata.create_all(bind=engine)
     _ensure_profile_columns()
+    _ensure_user_columns()
+    _bootstrap_admin()
 
 
 def _ensure_profile_columns() -> None:
@@ -51,9 +53,55 @@ def _ensure_profile_columns() -> None:
 
     additions = [("chinese_name", "VARCHAR(60)")]
     with engine.begin() as conn:
-        for name, ddl in additions:
-            if name not in cols:
-                conn.execute(text(f"ALTER TABLE profiles ADD COLUMN {name} {ddl}"))
+        for col_name, ddl in additions:
+            if col_name not in cols:
+                conn.execute(text(f"ALTER TABLE profiles ADD COLUMN {col_name} {ddl}"))
+
+
+def _ensure_user_columns() -> None:
+    """Add referral / admin / active columns to the users table if missing."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    try:
+        cols = {c["name"] for c in inspector.get_columns("users")}
+    except Exception:
+        return
+
+    additions = [
+        ("is_active", "BOOLEAN NOT NULL DEFAULT TRUE"),
+        ("is_admin", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("referral_code", "VARCHAR(16)"),
+        ("referred_by_id", "INTEGER"),
+    ]
+    with engine.begin() as conn:
+        for col_name, ddl in additions:
+            if col_name not in cols:
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {ddl}"))
+        # Backfill referral codes for any user without one.
+        from .referral import generate_referral_code
+
+        rows = list(conn.execute(text("SELECT id FROM users WHERE referral_code IS NULL")))
+        for row in rows:
+            code = generate_referral_code()
+            conn.execute(
+                text("UPDATE users SET referral_code = :c WHERE id = :id"),
+                {"c": code, "id": row[0]},
+            )
+
+
+def _bootstrap_admin() -> None:
+    """Promote the ADMIN_EMAIL user to admin on every startup."""
+    admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
+    if not admin_email:
+        return
+    from sqlalchemy import text
+
+    with engine.begin() as conn:
+        conn.execute(
+            text("UPDATE users SET is_admin = TRUE WHERE LOWER(email) = :email"),
+            {"email": admin_email},
+        )
 
 
 app.include_router(auth.router)
@@ -62,6 +110,8 @@ app.include_router(readings.router)
 app.include_router(name.router)
 app.include_router(fengshui.router)
 app.include_router(chat.router)
+app.include_router(referrals.router)
+app.include_router(admin.router)
 
 
 @app.get("/api/health", tags=["meta"])

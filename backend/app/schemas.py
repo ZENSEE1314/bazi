@@ -11,6 +11,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     display_name: str | None = Field(default=None, max_length=120)
+    referral_code: str | None = Field(default=None, max_length=16)
 
 
 class UserLogin(BaseModel):
@@ -25,6 +26,10 @@ class UserOut(BaseModel):
     email: EmailStr
     display_name: str | None
     is_premium: bool
+    is_active: bool
+    is_admin: bool
+    referral_code: str | None
+    referred_by_id: int | None
     created_at: datetime
 
 
@@ -423,6 +428,70 @@ class ChatReply(BaseModel):
     session: ChatSessionOut
     user_message: ChatMessageOut
     assistant_message: ChatMessageOut
+
+
+# ----- Referrals / admin --------------------------------------------------
+
+class ReferredUserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: EmailStr
+    display_name: str | None
+    is_premium: bool
+    created_at: datetime
+
+
+class ReferralSummary(BaseModel):
+    code: str
+    share_url: str
+    tier_percents: list[int]
+    monthly_fee_usd: float
+    direct_referrals: list[ReferredUserOut]
+    downline_tier_counts: dict[str, int]  # {"tier_1": n, "tier_2": n, "tier_3": n}
+    pending_cents: int
+    paid_cents: int
+    pending_count: int
+    paid_count: int
+
+
+class CommissionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    earner_user_id: int
+    payer_user_id: int
+    tier: int
+    amount_cents: int
+    period_month: str
+    status: str
+    paid_at: datetime | None
+    created_at: datetime
+
+
+class AdminUserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: EmailStr
+    display_name: str | None
+    is_premium: bool
+    is_active: bool
+    is_admin: bool
+    referral_code: str | None
+    referred_by_id: int | None
+    created_at: datetime
+    total_pending_cents: int = 0
+    total_paid_cents: int = 0
+
+
+class AdminUserAction(BaseModel):
+    note: str | None = Field(default=None, max_length=200)
+
+
+class MarkPremiumRequest(BaseModel):
+    period_month: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}$")
+    note: str | None = Field(default=None, max_length=200)
 
 
 class PairAnalysisItem(BaseModel):

@@ -2,8 +2,8 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 
-function buildLinks(t: (k: string) => string) {
-  return [
+function buildLinks(t: (k: string) => string, isAdmin: boolean) {
+  const base = [
     { to: "/", label: t("nav.dashboard"), end: true },
     { to: "/profiles", label: t("nav.profiles") },
     { to: "/numerology", label: t("nav.numbers") },
@@ -11,13 +11,16 @@ function buildLinks(t: (k: string) => string) {
     { to: "/fengshui", label: t("nav.fengshui") },
     { to: "/compatibility", label: t("nav.compatibility") },
     { to: "/chat", label: t("nav.chat") },
+    { to: "/referrals", label: t("nav.referrals") },
   ];
+  if (isAdmin) base.push({ to: "/admin", label: t("nav.admin") });
+  return base;
 }
 
 export function Shell() {
   const { user, logout } = useAuth();
   const { lang, setLang, t } = useI18n();
-  const links = buildLinks(t);
+  const links = buildLinks(t, user?.is_admin ?? false);
 
   return (
     <div className="min-h-screen flex flex-col">

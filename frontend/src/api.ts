@@ -15,6 +15,46 @@ export type User = {
   email: string;
   display_name: string | null;
   is_premium: boolean;
+  is_active: boolean;
+  is_admin: boolean;
+  referral_code: string | null;
+  referred_by_id: number | null;
+  created_at: string;
+};
+
+export type ReferralSummary = {
+  code: string;
+  share_url: string;
+  tier_percents: number[];
+  monthly_fee_usd: number;
+  direct_referrals: Array<{
+    id: number;
+    email: string;
+    display_name: string | null;
+    is_premium: boolean;
+    created_at: string;
+  }>;
+  downline_tier_counts: { tier_1: number; tier_2: number; tier_3: number };
+  pending_cents: number;
+  paid_cents: number;
+  pending_count: number;
+  paid_count: number;
+};
+
+export type AdminUser = User & {
+  total_pending_cents: number;
+  total_paid_cents: number;
+};
+
+export type Commission = {
+  id: number;
+  earner_user_id: number;
+  payer_user_id: number;
+  tier: number;
+  amount_cents: number;
+  period_month: string;
+  status: "pending" | "paid";
+  paid_at: string | null;
   created_at: string;
 };
 
@@ -412,10 +452,10 @@ async function request<T>(
 }
 
 export const api = {
-  register: (email: string, password: string, display_name?: string) =>
+  register: (email: string, password: string, display_name?: string, referral_code?: string) =>
     request<{ access_token: string; user: User }>("/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email, password, display_name }),
+      body: JSON.stringify({ email, password, display_name, referral_code }),
     }),
 
   login: async (email: string, password: string) => {
@@ -489,4 +529,43 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ profile_a_id: a, profile_b_id: b }),
     }),
+
+  // Referrals
+  myReferrals: () => request<ReferralSummary>("/api/referrals/me"),
+
+  // Admin
+  adminListUsers: (q?: string) =>
+    request<AdminUser[]>(`/api/admin/users${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+  adminBan: (id: number) => request<User>(`/api/admin/users/${id}/ban`, { method: "POST" }),
+  adminUnban: (id: number) => request<User>(`/api/admin/users/${id}/unban`, { method: "POST" }),
+  adminSetPremium: (id: number, period_month?: string, note?: string) =>
+    request<User>(`/api/admin/users/${id}/set_premium`, {
+      method: "POST",
+      body: JSON.stringify({ period_month, note }),
+    }),
+  adminUnsetPremium: (id: number) =>
+    request<User>(`/api/admin/users/${id}/unset_premium`, { method: "POST" }),
+  adminMakeAdmin: (id: number) =>
+    request<User>(`/api/admin/users/${id}/admin`, { method: "POST" }),
+  adminUnmakeAdmin: (id: number) =>
+    request<User>(`/api/admin/users/${id}/unadmin`, { method: "POST" }),
+  adminListCommissions: (params?: {
+    status?: "pending" | "paid";
+    period_month?: string;
+    earner_id?: number;
+  }) => {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set("status", params.status);
+    if (params?.period_month) qs.set("period_month", params.period_month);
+    if (params?.earner_id != null) qs.set("earner_id", String(params.earner_id));
+    const q = qs.toString();
+    return request<Commission[]>(`/api/admin/commissions${q ? `?${q}` : ""}`);
+  },
+  adminMarkCommissionPaid: (id: number) =>
+    request<Commission>(`/api/admin/commissions/${id}/mark_paid`, { method: "POST" }),
+  adminPayAllPending: (period_month?: string) =>
+    request<{ count: number; amount_cents: number }>(
+      `/api/admin/commissions/pay_all${period_month ? `?period_month=${period_month}` : ""}`,
+      { method: "POST" },
+    ),
 };

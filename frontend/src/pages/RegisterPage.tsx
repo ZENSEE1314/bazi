@@ -1,23 +1,30 @@
-import { FormEvent, useState } from "react";
-import { Link } from "react-router-dom";
+import { FormEvent, useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 
 export function RegisterPage() {
   const { t } = useI18n();
   const { register } = useAuth();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [refCode, setRefCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("ref");
+    if (fromUrl) setRefCode(fromUrl.toUpperCase());
+  }, [searchParams]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      await register(email, password, name || undefined);
+      await register(email, password, name || undefined, refCode || undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("auth.register_failed"));
     } finally {
@@ -44,6 +51,16 @@ export function RegisterPage() {
           <label className="block">
             <span className="text-xs text-muted">{t("auth.password_min")}</span>
             <input type="password" className="input mt-1" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+          </label>
+          <label className="block">
+            <span className="text-xs text-muted">{t("auth.referral_code")}</span>
+            <input
+              className="input mt-1 font-mono tracking-widest uppercase"
+              value={refCode}
+              onChange={(e) => setRefCode(e.target.value.toUpperCase())}
+              maxLength={16}
+              placeholder="AB12CD"
+            />
           </label>
           {error && <div className="text-xs text-fire">{error}</div>}
           <button type="submit" disabled={busy} className="btn-primary w-full">
