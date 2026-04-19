@@ -17,7 +17,10 @@ from ..schemas import (
     ChineseNameReadingOut,
     ChineseNameGridsOut,
     CharStroke,
+    LifeStageOut,
     NameGrid,
+    ThreeTalents,
+    YinYangBalance,
 )
 from ...core.numerology.chinese_name import analyse_chinese_name
 
@@ -62,6 +65,14 @@ def chinese_name(
         inauspicious_grids=r.inauspicious_grids,
         mixed_grids=r.mixed_grids,
         summary=r.summary,
+        three_talents=ThreeTalents(**r.three_talents),
+        life_stages=[LifeStageOut(**s) for s in r.life_stages],
+        yin_yang=YinYangBalance(**r.yin_yang),
+        aspect_scores=r.aspect_scores,
+        aspect_notes=r.aspect_notes,
+        total_strokes=r.total_strokes,
+        surname_strokes=r.surname_strokes,
+        given_strokes=r.given_strokes,
     )
     save_reading(
         db, user,

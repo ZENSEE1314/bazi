@@ -397,6 +397,7 @@ class DeepCompatibility(BaseModel):
 class CharStroke(BaseModel):
     char: str
     strokes: int
+    meaning: str | None = None
 
 
 class NameGrid(BaseModel):
@@ -419,6 +420,37 @@ class ChineseNameRequest(BaseModel):
     surname_length: int | None = None
 
 
+class ThreeTalents(BaseModel):
+    heaven_element: str
+    person_element: str
+    earth_element: str
+    heaven_person: str
+    person_earth: str
+    heaven_earth: str
+    level: str
+    label_en: str
+    label_cn: str
+    note: str
+
+
+class LifeStageOut(BaseModel):
+    grid: str
+    age_label_en: str
+    age_label_zh: str
+    role: str
+    number: int
+    quality: str
+    theme: str
+    note: str
+
+
+class YinYangBalance(BaseModel):
+    odd_count: int
+    even_count: int
+    total: int
+    verdict: str
+
+
 class ChineseNameReadingOut(BaseModel):
     name: str
     surname: str
@@ -431,6 +463,14 @@ class ChineseNameReadingOut(BaseModel):
     inauspicious_grids: int
     mixed_grids: int
     summary: str
+    three_talents: ThreeTalents
+    life_stages: list[LifeStageOut]
+    yin_yang: YinYangBalance
+    aspect_scores: dict[str, int]
+    aspect_notes: list[str]
+    total_strokes: int
+    surname_strokes: int
+    given_strokes: int
 
 
 # ----- Feng Shui ----------------------------------------------------------

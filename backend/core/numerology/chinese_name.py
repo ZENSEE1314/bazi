@@ -208,7 +208,7 @@ class ChineseNameReading:
     name: str
     surname: str
     given: str
-    character_strokes: list[dict]   # [{char, strokes}]
+    character_strokes: list[dict]   # [{char, strokes, meaning}]
     grids: ChineseNameGrids
     element_profile: dict[str, int] # per-element counts from name strokes via digit -> element
     dominant_element: str
@@ -216,6 +216,15 @@ class ChineseNameReading:
     inauspicious_grids: int
     mixed_grids: int
     summary: str
+    # New depth
+    three_talents: dict             # Heaven-Person-Earth element triad classification
+    life_stages: list[dict]         # narrative per life stage keyed to each grid
+    yin_yang: dict                  # odd/even stroke balance analysis
+    aspect_scores: dict[str, int]   # career / wealth / health / marriage / social (0-100)
+    aspect_notes: list[str]         # plain-language bullets
+    total_strokes: int
+    surname_strokes: int
+    given_strokes: int
 
 
 # Digit-to-element (same mapping as numerology scorer)
@@ -223,6 +232,237 @@ _DIGIT_ELEMENT = {
     0: "water", 1: "water", 2: "earth", 3: "wood", 4: "wood",
     5: "earth", 6: "metal", 7: "metal", 8: "earth", 9: "fire",
 }
+
+# Classic 姓名学 stroke-number → element convention used for 三才 (Three Talents).
+# 1,2 → wood   3,4 → fire   5,6 → earth   7,8 → metal   9,0 → water
+_STROKE_ELEMENT_SANCAI = {
+    1: "wood", 2: "wood",
+    3: "fire", 4: "fire",
+    5: "earth", 6: "earth",
+    7: "metal", 8: "metal",
+    9: "water", 0: "water",
+}
+
+_PRODUCES = {"wood": "fire", "fire": "earth", "earth": "metal", "metal": "water", "water": "wood"}
+_CONTROLS = {"wood": "earth", "fire": "metal", "earth": "water", "metal": "wood", "water": "fire"}
+
+
+def _sancai_element(n: int) -> str:
+    return _STROKE_ELEMENT_SANCAI[n % 10]
+
+
+def _relation(a: str, b: str) -> str:
+    """Return 'same' | 'produces' | 'produced_by' | 'controls' | 'controlled_by'."""
+    if a == b:
+        return "same"
+    if _PRODUCES[a] == b:
+        return "produces"
+    if _PRODUCES[b] == a:
+        return "produced_by"
+    if _CONTROLS[a] == b:
+        return "controls"
+    if _CONTROLS[b] == a:
+        return "controlled_by"
+    return "neutral"
+
+
+def _classify_sancai(heaven: str, person: str, earth: str) -> dict:
+    """Classify the Heaven-Person-Earth element triad."""
+    r_hp = _relation(heaven, person)
+    r_pe = _relation(person, earth)
+    r_he = _relation(heaven, earth)
+
+    rels = {r_hp, r_pe}
+    bad = {"controls", "controlled_by"}
+    good = {"produces", "produced_by"}
+
+    if r_hp in good and r_pe in good and r_he != "controls":
+        level = "great"
+        label_en = "Greatly Auspicious"
+        label_cn = "大吉"
+        note = "Heaven, Person, and Earth form a natural productive cycle. Supports harmony at every life stage."
+    elif r_hp in good or r_pe in good:
+        if rels & bad:
+            level = "mixed"
+            label_en = "Mixed"
+            label_cn = "半吉"
+            note = "Partial support; at least one relationship is productive, but others clash. Expect uneven fortunes."
+        else:
+            level = "good"
+            label_en = "Auspicious"
+            label_cn = "吉"
+            note = "Generally supportive across life stages; no strong clashes."
+    elif r_hp == "same" and r_pe == "same":
+        level = "neutral"
+        label_en = "Balanced (Uniform)"
+        label_cn = "平"
+        note = "All three grids share one element — stable but narrow. The strength doubles as blind spot."
+    elif r_hp in bad and r_pe in bad:
+        level = "bad"
+        label_en = "Inauspicious"
+        label_cn = "凶"
+        note = "Heaven, Person, and Earth clash at multiple junctures. Life requires active buffering; watch health and partnerships."
+    else:
+        level = "mixed"
+        label_en = "Mixed"
+        label_cn = "半吉"
+        note = "Mixed current — some support, some friction. Results depend heavily on the person's effort."
+
+    return {
+        "heaven_element": heaven,
+        "person_element": person,
+        "earth_element": earth,
+        "heaven_person": r_hp,
+        "person_earth": r_pe,
+        "heaven_earth": r_he,
+        "level": level,
+        "label_en": label_en,
+        "label_cn": label_cn,
+        "note": note,
+    }
+
+
+# Character meanings — small built-in lexicon of common given-name characters.
+# Not comprehensive; falls back to unknown.
+_CHAR_MEANINGS: dict[str, str] = {
+    "江": "river; broad flowing water",
+    "河": "river",
+    "海": "sea, vast",
+    "山": "mountain, stability",
+    "石": "stone, durability",
+    "木": "tree, growth",
+    "林": "forest, abundance",
+    "森": "dense woods, depth",
+    "火": "fire, passion",
+    "炎": "blazing, intensity",
+    "明": "bright, clarity, wisdom",
+    "光": "light, radiance",
+    "日": "sun, day, brightness",
+    "月": "moon, gentle yin",
+    "星": "star, aspiration",
+    "天": "heaven, sky, grand",
+    "云": "cloud, elevated spirit",
+    "风": "wind, movement",
+    "雨": "rain, nourishment",
+    "雪": "snow, purity",
+    "冰": "ice, cool composure",
+    "金": "gold, metal, wealth",
+    "银": "silver, refined",
+    "玉": "jade, nobility",
+    "珠": "pearl, rare beauty",
+    "宝": "treasure",
+    "龙": "dragon, power and prestige",
+    "凤": "phoenix, grace",
+    "虎": "tiger, courage",
+    "文": "literature, refinement",
+    "武": "martial, strength",
+    "智": "wisdom, intellect",
+    "仁": "benevolence, kindness",
+    "义": "righteousness",
+    "礼": "propriety, courtesy",
+    "信": "trust, faithfulness",
+    "忠": "loyalty",
+    "孝": "filial piety",
+    "勇": "courage",
+    "诚": "sincerity",
+    "善": "goodness, virtue",
+    "美": "beauty",
+    "丽": "beautiful, elegant",
+    "秀": "graceful, elegant",
+    "雅": "refined, elegant",
+    "慧": "wisdom, intelligence",
+    "聪": "cleverness, sharpness",
+    "思": "thought, reflection",
+    "梦": "dream, aspiration",
+    "心": "heart, intention",
+    "志": "ambition, will",
+    "立": "to stand, to establish",
+    "建": "to build, establish",
+    "国": "country, nation",
+    "家": "home, family",
+    "永": "eternal, forever",
+    "安": "peace, safety",
+    "康": "healthy, peaceful",
+    "寿": "longevity",
+    "福": "fortune, blessing",
+    "禄": "official prosperity",
+    "喜": "joy, happiness",
+    "财": "wealth",
+    "富": "abundance, wealthy",
+    "贵": "noble, honored",
+    "华": "flourishing, splendor",
+    "荣": "glory, honor",
+    "昌": "prosperity, flourishing",
+    "盛": "abundant, thriving",
+    "兴": "to rise, prosper",
+    "旺": "thriving, booming",
+    "平": "peace, level",
+    "正": "upright, correct",
+    "大": "great, large",
+    "小": "small, humble",
+    "伟": "great, magnificent",
+    "杰": "outstanding, hero",
+    "英": "hero, outstanding",
+    "俊": "handsome, talented",
+    "豪": "heroic, generous",
+    "辉": "brilliance, glory",
+    "耀": "shining, radiant",
+    "灿": "brilliant, dazzling",
+    "德": "virtue, integrity",
+    "敬": "respect",
+    "恭": "respectful, humble",
+    "谦": "humble, modest",
+    "和": "harmony, peace",
+    "顺": "smooth, obedient",
+    "诚": "sincerity",
+    "真": "truth, genuine",
+    "纯": "pure, unblemished",
+    "清": "clear, pure",
+    "静": "still, quiet",
+    "澄": "clear, pure (water)",
+    "擎": "to hold up, to support",
+    "维": "to support, to maintain; dimension",
+    "梓": "catalpa tree, home",
+    "轩": "high, dignified",
+    "浩": "vast, grand",
+    "宇": "universe, expanse",
+    "宙": "the cosmos, time",
+    "晨": "dawn, morning",
+    "昊": "vast sky",
+    "朗": "bright, clear",
+    "瑞": "auspicious omen",
+    "祥": "auspicious",
+    "欣": "joyful, delighted",
+    "悦": "joyful, pleased",
+    "怡": "harmonious, pleasant",
+    "妍": "beautiful",
+    "婷": "graceful, pretty",
+    "娜": "graceful",
+    "娟": "beautiful, graceful",
+    "静": "quiet, serene",
+    "洁": "pure, clean",
+    "薇": "rose, delicate",
+    "瑶": "precious jade",
+    "瑾": "fine jade",
+    "琪": "fine jade",
+    "琦": "uncommon jade",
+    "涵": "to contain; depth",
+    "语": "speech, words",
+    "诗": "poetry",
+    "雯": "patterned clouds",
+    "馨": "fragrance, virtue",
+    "鑫": "prosperous (three golds)",
+    "铭": "to inscribe; remember",
+    "锦": "brocade, splendor",
+    "鸿": "swan goose, grand",
+    "彦": "accomplished scholar",
+    "逸": "leisurely, outstanding",
+}
+
+
+def _character_meaning(c: str) -> str | None:
+    m = _CHAR_MEANINGS.get(c)
+    return m
 
 
 def analyse_chinese_name(full_name: str, surname_length: int | None = None) -> ChineseNameReading:
@@ -244,7 +484,11 @@ def analyse_chinese_name(full_name: str, surname_length: int | None = None) -> C
 
     per_char = []
     for c in name:
-        per_char.append({"char": c, "strokes": _estimate_strokes(c)})
+        per_char.append({
+            "char": c,
+            "strokes": _estimate_strokes(c),
+            "meaning": _character_meaning(c),
+        })
 
     surname_strokes = sum(x["strokes"] for x in per_char[:surname_length])
     given_strokes = sum(x["strokes"] for x in per_char[surname_length:])
@@ -290,6 +534,97 @@ def analyse_chinese_name(full_name: str, surname_length: int | None = None) -> C
     else:
         summary = "Name leans slightly favorable; the Person grid (self) matters most."
 
+    # Three Talents (三才) — Heaven / Person / Earth grid element triad
+    sancai = _classify_sancai(
+        _sancai_element(heaven_num),
+        _sancai_element(person_num),
+        _sancai_element(earth_num),
+    )
+
+    # Life-stage narrative keyed off each grid's quality + theme.
+    def _stage_narrative(grid_key: str, age_en: str, age_zh: str, role_en: str,
+                         g: dict) -> dict:
+        if g["quality"] == "auspicious":
+            lead = f"{age_en}: favorable tailwinds."
+        elif g["quality"] == "inauspicious":
+            lead = f"{age_en}: challenging currents; conscious effort required."
+        else:
+            lead = f"{age_en}: mixed signals — strong focus pays."
+        return {
+            "grid": grid_key,
+            "age_label_en": age_en,
+            "age_label_zh": age_zh,
+            "role": role_en,
+            "number": g["number"],
+            "quality": g["quality"],
+            "theme": g["theme"],
+            "note": f"{lead} {g['theme']}",
+        }
+
+    life_stages = [
+        _stage_narrative("heaven", "Ages 1–20",  "1-20 岁",  "Inherited luck / childhood",   grids.heaven),
+        _stage_narrative("person", "Ages 20–40", "20-40 岁", "Core self / early career",     grids.person),
+        _stage_narrative("earth",  "Ages 40–60", "40-60 岁", "Subordinates / mid-life base", grids.earth),
+        _stage_narrative("total",  "Ages 60+",   "60 岁以后", "Overall lifetime fate",        grids.total),
+        _stage_narrative("outer",  "Lifelong",   "终生",     "Social life & external help",  grids.outer),
+    ]
+
+    # Yin/Yang stroke balance
+    odd = sum(1 for c in per_char if c["strokes"] % 2 == 1)
+    even = len(per_char) - odd
+    if abs(odd - even) <= 1:
+        yy_verdict = "Balanced — odd and even strokes mix well."
+    elif odd > even:
+        yy_verdict = "Yang-heavy (odd strokes dominate) — strong outward drive, can feel rushed."
+    else:
+        yy_verdict = "Yin-heavy (even strokes dominate) — steady and internal, may lack assertiveness."
+    yin_yang = {
+        "odd_count": odd,
+        "even_count": even,
+        "total": len(per_char),
+        "verdict": yy_verdict,
+    }
+
+    # Aspect scores — derived from grid qualities.
+    q_score = {"auspicious": 100, "mixed": 60, "inauspicious": 30}
+    def _q(g: dict) -> int:
+        return q_score.get(g["quality"], 60)
+
+    career   = int(round(_q(grids.total) * 0.5 + _q(grids.person) * 0.5))
+    wealth   = int(round(_q(grids.person) * 0.4 + _q(grids.outer) * 0.3 + _q(grids.total) * 0.3))
+    health   = int(round(_q(grids.earth) * 0.5 + _q(grids.heaven) * 0.5))
+    marriage = int(round(_q(grids.earth) * 0.5 + _q(grids.person) * 0.5))
+    social   = int(round(_q(grids.outer) * 0.6 + _q(grids.person) * 0.4))
+    aspect_scores = {
+        "career": career,
+        "wealth": wealth,
+        "health": health,
+        "marriage": marriage,
+        "social": social,
+    }
+
+    aspect_notes: list[str] = []
+    if career >= 80:
+        aspect_notes.append("Career: strong foundation for reputation and advancement.")
+    elif career < 45:
+        aspect_notes.append("Career: expect setbacks at decision points; pick steady roles over high-stakes gambles.")
+    if wealth >= 80:
+        aspect_notes.append("Wealth: good prosperity currents, especially via networks and reputation.")
+    elif wealth < 45:
+        aspect_notes.append("Wealth: money comes and goes easily — discipline over speculation.")
+    if health >= 80:
+        aspect_notes.append("Health: supportive early-life and family environment typically translates to resilience.")
+    elif health < 45:
+        aspect_notes.append("Health: pay attention to chronic patterns and family-line tendencies.")
+    if marriage >= 80:
+        aspect_notes.append("Marriage: stable base with a grounded partner likely.")
+    elif marriage < 45:
+        aspect_notes.append("Marriage: emotional undertow; choose a mature, patient partner consciously.")
+    if social >= 80:
+        aspect_notes.append("Social: natural helpers and broad network throughout life.")
+    elif social < 45:
+        aspect_notes.append("Social: few external rescuers — cultivate your circle deliberately.")
+
     return ChineseNameReading(
         name=name,
         surname=surname,
@@ -302,4 +637,12 @@ def analyse_chinese_name(full_name: str, surname_length: int | None = None) -> C
         inauspicious_grids=inausp,
         mixed_grids=mixed,
         summary=summary,
+        three_talents=sancai,
+        life_stages=life_stages,
+        yin_yang=yin_yang,
+        aspect_scores=aspect_scores,
+        aspect_notes=aspect_notes,
+        total_strokes=total_strokes,
+        surname_strokes=surname_strokes,
+        given_strokes=given_strokes,
     )

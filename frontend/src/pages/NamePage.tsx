@@ -115,11 +115,19 @@ export function NamePage() {
               <div className="text-xs uppercase tracking-wider text-muted mb-1">{t("name.character_strokes")}</div>
               <div className="flex flex-wrap gap-2">
                 {result.character_strokes.map((c, i) => (
-                  <div key={i} className="px-3 py-1.5 rounded-lg border border-ink/10 bg-parchment">
-                    <span className="font-display text-xl mr-2">{c.char}</span>
-                    <span className="text-xs text-muted">{c.strokes} {t("name.strokes")}</span>
+                  <div key={i} className="px-3 py-2 rounded-lg border border-ink/10 bg-parchment min-w-[120px]">
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-display text-2xl">{c.char}</span>
+                      <span className="text-xs text-muted">{c.strokes} {t("name.strokes")}</span>
+                    </div>
+                    {c.meaning && (
+                      <div className="text-[11px] text-muted mt-1 italic">{c.meaning}</div>
+                    )}
                   </div>
                 ))}
+              </div>
+              <div className="text-xs text-muted mt-2">
+                {t("name.totals")}: {result.surname_strokes} + {result.given_strokes} = <b>{result.total_strokes}</b>
               </div>
             </div>
           </section>
@@ -156,6 +164,108 @@ export function NamePage() {
                 </tbody>
               </table>
             </div>
+          </section>
+
+          {/* Three Talents */}
+          <section className="rounded-2xl border border-ink/10 bg-white p-5">
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+              <div className="text-xs uppercase tracking-wider text-muted">
+                {t("name.three_talents")}
+              </div>
+              <span className={`chip ${
+                result.three_talents.level === "great" ? "element-wood" :
+                result.three_talents.level === "good" ? "element-wood" :
+                result.three_talents.level === "bad" ? "element-fire" :
+                "element-earth"
+              }`}>
+                {result.three_talents.label_cn} {result.three_talents.label_en}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 justify-center text-sm mb-3">
+              <div className="text-center">
+                <div className="text-xs text-muted">{t("name.heaven")}</div>
+                <span className={`chip ${elementClass[result.three_talents.heaven_element]} text-base px-3 py-1`}>
+                  {result.three_talents.heaven_element}
+                </span>
+              </div>
+              <div className="text-muted">→</div>
+              <div className="text-center">
+                <div className="text-xs text-muted">{t("name.person")}</div>
+                <span className={`chip ${elementClass[result.three_talents.person_element]} text-base px-3 py-1`}>
+                  {result.three_talents.person_element}
+                </span>
+              </div>
+              <div className="text-muted">→</div>
+              <div className="text-center">
+                <div className="text-xs text-muted">{t("name.earth")}</div>
+                <span className={`chip ${elementClass[result.three_talents.earth_element]} text-base px-3 py-1`}>
+                  {result.three_talents.earth_element}
+                </span>
+              </div>
+            </div>
+            <p className="text-sm text-muted">{result.three_talents.note}</p>
+          </section>
+
+          {/* Life stages */}
+          <section className="rounded-2xl border border-ink/10 bg-white p-5">
+            <div className="text-xs uppercase tracking-wider text-muted mb-3">{t("name.life_stages")}</div>
+            <div className="space-y-2">
+              {result.life_stages.map((s, i) => (
+                <div key={i} className="flex gap-3 items-start rounded-xl border border-ink/5 p-3 bg-parchment/50">
+                  <div className="shrink-0 text-center w-24">
+                    <div className="text-xs text-muted">{s.age_label_en}</div>
+                    <div className="text-xs text-muted">{s.age_label_zh}</div>
+                    <div className="font-display text-2xl mt-1">{s.number}</div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <b className="text-sm">{s.role}</b>
+                      <span className={`chip ${qualityClass(s.quality)}`}>{s.quality}</span>
+                    </div>
+                    <p className="text-sm mt-1">{s.note}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Aspect scores */}
+          <section className="rounded-2xl border border-ink/10 bg-white p-5">
+            <div className="text-xs uppercase tracking-wider text-muted mb-3">{t("name.aspects")}</div>
+            <div className="grid grid-cols-5 gap-2 text-center">
+              {(["career", "wealth", "health", "marriage", "social"] as const).map((k) => {
+                const v = result.aspect_scores[k];
+                const chipCls = v >= 80 ? "element-wood" : v >= 45 ? "element-earth" : "element-fire";
+                return (
+                  <div key={k} className="rounded-xl border border-ink/5 p-3">
+                    <div className="text-[10px] uppercase tracking-wider text-muted">{t(`name.aspect_${k}`)}</div>
+                    <div className="font-display text-2xl mt-1">{v}</div>
+                    <span className={`chip ${chipCls} mt-1 text-[10px]`}>{v >= 80 ? "strong" : v >= 45 ? "mixed" : "weak"}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {result.aspect_notes.length > 0 && (
+              <ul className="list-disc pl-5 mt-4 text-sm space-y-1">
+                {result.aspect_notes.map((n, i) => <li key={i}>{n}</li>)}
+              </ul>
+            )}
+          </section>
+
+          {/* Yin Yang */}
+          <section className="rounded-2xl border border-ink/10 bg-white p-5">
+            <div className="text-xs uppercase tracking-wider text-muted mb-2">{t("name.yin_yang")}</div>
+            <div className="flex items-center gap-3 text-sm mb-2">
+              <div className="flex-1">
+                <div className="text-xs text-muted">{t("name.odd")}</div>
+                <div className="font-display text-2xl">{result.yin_yang.odd_count}</div>
+              </div>
+              <div className="flex-1">
+                <div className="text-xs text-muted">{t("name.even")}</div>
+                <div className="font-display text-2xl">{result.yin_yang.even_count}</div>
+              </div>
+            </div>
+            <p className="text-sm">{result.yin_yang.verdict}</p>
           </section>
 
           <section className="rounded-2xl border border-ink/10 bg-white p-5">

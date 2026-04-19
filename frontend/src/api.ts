@@ -428,11 +428,42 @@ export type NameGrid = {
   theme: string;
 };
 
+export type ThreeTalents = {
+  heaven_element: string;
+  person_element: string;
+  earth_element: string;
+  heaven_person: string;
+  person_earth: string;
+  heaven_earth: string;
+  level: "great" | "good" | "mixed" | "neutral" | "bad";
+  label_en: string;
+  label_cn: string;
+  note: string;
+};
+
+export type LifeStage = {
+  grid: string;
+  age_label_en: string;
+  age_label_zh: string;
+  role: string;
+  number: number;
+  quality: "auspicious" | "inauspicious" | "mixed";
+  theme: string;
+  note: string;
+};
+
+export type YinYangBalance = {
+  odd_count: number;
+  even_count: number;
+  total: number;
+  verdict: string;
+};
+
 export type ChineseNameReading = {
   name: string;
   surname: string;
   given: string;
-  character_strokes: { char: string; strokes: number }[];
+  character_strokes: { char: string; strokes: number; meaning?: string | null }[];
   grids: {
     heaven: NameGrid;
     person: NameGrid;
@@ -446,6 +477,14 @@ export type ChineseNameReading = {
   inauspicious_grids: number;
   mixed_grids: number;
   summary: string;
+  three_talents: ThreeTalents;
+  life_stages: LifeStage[];
+  yin_yang: YinYangBalance;
+  aspect_scores: { career: number; wealth: number; health: number; marriage: number; social: number };
+  aspect_notes: string[];
+  total_strokes: number;
+  surname_strokes: number;
+  given_strokes: number;
 };
 
 export type RoomVerdict = {

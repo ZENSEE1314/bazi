@@ -19,8 +19,11 @@ from ..schemas import (
     ChineseNameGridsOut,
     CharStroke,
     FengShuiReadingOut,
+    LifeStageOut,
     NameGrid,
     RoomVerdictOut,
+    ThreeTalents,
+    YinYangBalance,
 )
 from ..services.readings import _solar_year_for, build_deep_bazi
 from ...core.bazi.calculator import four_pillars
@@ -295,6 +298,14 @@ def business_reading(
             inauspicious_grids=nr.inauspicious_grids,
             mixed_grids=nr.mixed_grids,
             summary=nr.summary,
+            three_talents=ThreeTalents(**nr.three_talents),
+            life_stages=[LifeStageOut(**s) for s in nr.life_stages],
+            yin_yang=YinYangBalance(**nr.yin_yang),
+            aspect_scores=nr.aspect_scores,
+            aspect_notes=nr.aspect_notes,
+            total_strokes=nr.total_strokes,
+            surname_strokes=nr.surname_strokes,
+            given_strokes=nr.given_strokes,
         )
 
     # Compute match between business chart and each of the user's personal profiles.
