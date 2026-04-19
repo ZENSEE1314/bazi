@@ -18,6 +18,7 @@ import { BusinessesPage } from "./pages/BusinessesPage";
 import { BusinessDetailPage } from "./pages/BusinessDetailPage";
 import { FaceReadingPage } from "./pages/FaceReadingPage";
 import { PalmReadingPage } from "./pages/PalmReadingPage";
+import { LandingPage } from "./pages/LandingPage";
 
 function Private({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
@@ -28,7 +29,7 @@ function Private({ children }: { children: JSX.Element }) {
       </div>
     );
   }
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/welcome" replace />;
   return children;
 }
 
@@ -43,6 +44,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
+        <Route path="/welcome" element={<Public><LandingPage /></Public>} />
         <Route path="/login" element={<Public><LoginPage /></Public>} />
         <Route path="/register" element={<Public><RegisterPage /></Public>} />
         <Route
