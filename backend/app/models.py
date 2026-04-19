@@ -21,6 +21,13 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     is_admin: Mapped[bool] = mapped_column(default=False, nullable=False)
 
+    # Free-tier usage counters — ignored when is_premium.
+    free_numerology_uses: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    free_compatibility_uses: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    free_name_uses: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    free_fengshui_uses: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    free_chat_messages: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     referral_code: Mapped[str | None] = mapped_column(String(16), unique=True, index=True)
     referred_by_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True

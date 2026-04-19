@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import get_current_user
 from ..models import Profile, User
+from ..quota import check_and_consume
 from ..schemas import FengShuiReadingOut, FengShuiRequest, RoomVerdictOut
 from ...core.fengshui.house import analyse_home
 from ..services.readings import _solar_year_for
@@ -30,6 +31,7 @@ def home_reading(
             status_code=400,
             detail="Life Kua requires the profile's gender. Edit the profile to add it."
         )
+    check_and_consume("fengshui", user, db)
 
     fp = four_pillars(profile.birth_datetime)
     solar_year = _solar_year_for(fp)
@@ -44,6 +46,7 @@ def home_reading(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    db.commit()
     return FengShuiReadingOut(
         life_kua_number=r.life_kua_number,
         life_kua_group=r.life_kua_group,

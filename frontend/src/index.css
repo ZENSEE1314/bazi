@@ -4,6 +4,7 @@
 
 :root {
   color-scheme: light;
+  --ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 html,
@@ -12,20 +13,46 @@ body,
   height: 100%;
 }
 
+html { scroll-behavior: smooth; }
+
 body {
   @apply bg-parchment text-ink font-sans antialiased;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Respect system reduced-motion preference. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 .pillar-card {
   @apply rounded-xl border border-ink/10 bg-white shadow-sm p-4 flex flex-col items-center text-center;
+  transition: transform 220ms var(--ease-snap), box-shadow 220ms var(--ease-snap), border-color 220ms var(--ease-snap);
+}
+.pillar-card:hover {
+  @apply shadow-md border-ink/20;
+  transform: translateY(-2px);
 }
 
 .btn {
   @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition;
+  min-height: 40px;            /* iOS-friendly tap target */
+  touch-action: manipulation;
 }
 .btn-primary {
-  @apply btn bg-ink text-parchment hover:bg-black;
+  @apply btn bg-ink text-parchment shadow-sm;
+  transition: transform 160ms var(--ease-snap), background-color 160ms, box-shadow 200ms;
 }
+.btn-primary:hover   { @apply bg-black; transform: translateY(-1px); }
+.btn-primary:active  { transform: translateY(0); }
+.btn-primary:disabled{ @apply opacity-60 cursor-not-allowed; transform: none; }
+
 .btn-ghost {
   @apply btn bg-transparent text-ink hover:bg-ink/5;
 }
@@ -35,7 +62,10 @@ body {
 
 .input {
   @apply w-full rounded-lg border border-ink/15 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ink/20;
+  transition: border-color 160ms var(--ease-snap), box-shadow 160ms var(--ease-snap);
+  min-height: 40px;
 }
+.input:focus { @apply border-ink/40; }
 
 .chip {
   @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
@@ -46,3 +76,38 @@ body {
 .element-earth { @apply bg-earth-soft text-earth; }
 .element-metal { @apply bg-metal-soft text-ink; }
 .element-water { @apply bg-water-soft text-water; }
+
+/* Card surface used across the app: subtle hover lift. */
+section.rounded-2xl.bg-white {
+  transition: box-shadow 220ms var(--ease-snap), transform 220ms var(--ease-snap);
+}
+
+/* Fade-up page entrance (keyed off route remount). */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+main > div > * {
+  animation: fadeUp 320ms var(--ease-snap) both;
+}
+main > div > *:nth-child(1) { animation-delay: 0ms; }
+main > div > *:nth-child(2) { animation-delay: 30ms; }
+main > div > *:nth-child(3) { animation-delay: 60ms; }
+main > div > *:nth-child(4) { animation-delay: 90ms; }
+main > div > *:nth-child(5) { animation-delay: 120ms; }
+main > div > *:nth-child(6) { animation-delay: 150ms; }
+main > div > *:nth-child(7) { animation-delay: 180ms; }
+main > div > *:nth-child(8) { animation-delay: 210ms; }
+
+/* Mobile tweaks */
+@media (max-width: 640px) {
+  .font-display { letter-spacing: -0.01em; }
+
+  /* Keep horizontal-scrolling tables tappable. */
+  .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+}
+
+/* Upgrade banner */
+.upgrade-banner {
+  @apply rounded-xl border border-earth/40 bg-gradient-to-br from-earth-soft to-parchment p-4 text-sm;
+}

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#faf6ed"/>
+      <stop offset="1" stop-color="#e6dcc4"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b8864b"/>
+      <stop offset="1" stop-color="#8a5a2a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <!-- element dots -->
+  <circle cx="80"  cy="80"  r="6" fill="#2f8f5e" opacity=".5"/>
+  <circle cx="1120" cy="80"  r="6" fill="#c8382d" opacity=".5"/>
+  <circle cx="80"  cy="550" r="6" fill="#1e4f7a" opacity=".5"/>
+  <circle cx="1120" cy="550" r="6" fill="#b8864b" opacity=".5"/>
+
+  <g transform="translate(600,300)">
+    <circle r="170" fill="none" stroke="url(#ring)" stroke-width="3" opacity=".7"/>
+    <circle r="150" fill="none" stroke="#1a1a1a" stroke-width="1" opacity=".4"/>
+    <text x="0" y="36" font-family="'Noto Serif SC', serif" font-size="220" font-weight="700"
+          text-anchor="middle" fill="#1a1a1a">八字</text>
+  </g>
+
+  <text x="600" y="520" font-family="'Inter', sans-serif" font-size="38" font-weight="600"
+        text-anchor="middle" fill="#1a1a1a" letter-spacing="2">METAPHYSICAL SUITE</text>
+  <text x="600" y="565" font-family="'Inter', sans-serif" font-size="20"
+        text-anchor="middle" fill="#6b6b6b" letter-spacing="3">BA ZI · NUMEROLOGY · FENG SHUI</text>
+</svg>

@@ -8,6 +8,7 @@ import {
   DeepBaZi,
   Profile,
 } from "../api";
+import { useAuth } from "../auth";
 import { ElementBar, ScoreRing } from "../components/PillarCard";
 import { useI18n } from "../i18n";
 
@@ -43,6 +44,8 @@ function formatDate(d: Date) {
 
 export function ProfileDetailPage() {
   const { t, lang } = useI18n();
+  const { user } = useAuth();
+  const isPremium = user?.is_premium ?? false;
   const { id } = useParams<{ id: string }>();
   const profileId = Number(id);
 
@@ -519,7 +522,10 @@ export function ProfileDetailPage() {
           </div>
           <div className="flex items-center gap-1">
             <button
-              className="btn-ghost text-xs"
+              aria-label="Previous month"
+              className="btn-ghost text-xs disabled:opacity-40"
+              disabled={!isPremium}
+              title={!isPremium ? t("common.upgrade_cta") : ""}
               onClick={() => {
                 const d = new Date(calMonth.year, calMonth.month - 2, 1);
                 setCalMonth({ year: d.getFullYear(), month: d.getMonth() + 1 });
@@ -537,7 +543,10 @@ export function ProfileDetailPage() {
               {t("detail.this_month")}
             </button>
             <button
-              className="btn-ghost text-xs"
+              aria-label="Next month"
+              className="btn-ghost text-xs disabled:opacity-40"
+              disabled={!isPremium}
+              title={!isPremium ? t("common.upgrade_cta") : ""}
               onClick={() => {
                 const d = new Date(calMonth.year, calMonth.month, 1);
                 setCalMonth({ year: d.getFullYear(), month: d.getMonth() + 1 });
@@ -546,6 +555,11 @@ export function ProfileDetailPage() {
               →
             </button>
           </div>
+          {!isPremium && (
+            <div className="text-xs text-muted mt-2">
+              <a href="/referrals" className="chip element-earth">{t("common.premium_only")}</a>
+            </div>
+          )}
         </div>
 
         {calendar ? (

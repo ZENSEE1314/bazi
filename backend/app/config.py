@@ -19,7 +19,12 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_minutes: int = 60 * 24  # 24h
 
-    free_profile_limit: int = 3
+    free_profile_limit: int = 1
+    free_numerology_uses: int = 1
+    free_compatibility_uses: int = 1
+    free_name_uses: int = 1
+    free_fengshui_uses: int = 1
+    free_chat_messages: int = 1
     cors_origins: str = "*"
 
     static_dir: str = "frontend/dist"

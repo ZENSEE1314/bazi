@@ -15,7 +15,18 @@ def _make(auth_client: TestClient, name: str, is_main: bool = False) -> dict:
     return resp.json()
 
 
+def _promote_to_premium(email: str = "test@example.com") -> None:
+    """Helper to allow tests that need multi-profile setups to bypass the free limit."""
+    from backend.app.db import SessionLocal
+    from backend.app.models import User
+    with SessionLocal() as db:
+        user = db.query(User).filter(User.email == email).first()
+        user.is_premium = True
+        db.commit()
+
+
 def test_create_and_list_profiles(auth_client: TestClient):
+    _promote_to_premium()
     _make(auth_client, "Alice", is_main=True)
     _make(auth_client, "Bob")
     resp = auth_client.get("/api/profiles")
@@ -27,18 +38,18 @@ def test_create_and_list_profiles(auth_client: TestClient):
     assert body[0]["is_main"] is True
 
 
-def test_free_tier_limit_is_three(auth_client: TestClient):
-    for i in range(3):
-        _make(auth_client, f"P{i}")
+def test_free_tier_limit_is_one(auth_client: TestClient):
+    _make(auth_client, "P1")
     resp = auth_client.post(
         "/api/profiles",
-        json={"name": "P4", "birth_datetime": "1990-01-01T00:00:00"},
+        json={"name": "P2", "birth_datetime": "1990-01-01T00:00:00"},
     )
     assert resp.status_code == 402
     assert "Free tier" in resp.json()["detail"]
 
 
 def test_setting_main_unsets_other_mains(auth_client: TestClient):
+    _promote_to_premium()
     a = _make(auth_client, "A", is_main=True)
     b = _make(auth_client, "B", is_main=True)
 

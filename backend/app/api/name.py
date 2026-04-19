@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.params import Depends as DependsType  # noqa: F401
 
+from sqlalchemy.orm import Session
+
+from ..db import get_db
 from ..deps import get_current_user
 from ..models import User
+from ..quota import check_and_consume
 from ..schemas import (
     ChineseNameRequest,
     ChineseNameReadingOut,
@@ -22,7 +27,9 @@ router = APIRouter(prefix="/api/name", tags=["name"])
 def chinese_name(
     payload: ChineseNameRequest,
     user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> ChineseNameReadingOut:
+    check_and_consume("name", user, db)
     try:
         r = analyse_chinese_name(payload.name, payload.surname_length)
     except ValueError as exc:
@@ -36,6 +43,7 @@ def chinese_name(
             theme=g["theme"],
         )
 
+    db.commit()
     return ChineseNameReadingOut(
         name=r.name,
         surname=r.surname,

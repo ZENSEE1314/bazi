@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import get_current_user
 from ..models import Profile, User
+from ..quota import check_and_consume
 from ..schemas import (
     BaZiReading,
     CompatibilityReading,
@@ -75,6 +76,14 @@ def profile_calendar(
     db: Session = Depends(get_db),
 ) -> list[DailyCalendarDay]:
     profile = _owned_profile(db, user, profile_id)
+    # Free tier: only the current month.
+    if not user.is_premium:
+        now = datetime.now()
+        if year != now.year or month != now.month:
+            raise HTTPException(
+                status_code=402,
+                detail="Free tier calendar is limited to the current month. Upgrade to Premium for any month.",
+            )
     return build_calendar(profile.birth_datetime, year, month)
 
 
@@ -100,18 +109,28 @@ def deep_numerology(
         profile = db.get(Profile, payload.profile_id)
         if profile is None or profile.owner_id != user.id:
             raise HTTPException(status_code=404, detail="Profile not found")
+    check_and_consume("numerology", user, db)
     try:
-        return build_deep_numerology(payload.number, profile)
+        result = build_deep_numerology(payload.number, profile)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    db.commit()
+    return result
 
 
 @router.post("/numerology", response_model=NumerologyReading)
-def numerology(payload: NumerologyRequest, user: User = Depends(get_current_user)) -> NumerologyReading:
+def numerology(
+    payload: NumerologyRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> NumerologyReading:
+    check_and_consume("numerology", user, db)
     try:
-        return build_numerology_reading(payload.number)
+        result = build_numerology_reading(payload.number)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    db.commit()
+    return result
 
 
 @router.post("/compatibility", response_model=CompatibilityReading)
@@ -124,7 +143,10 @@ def compatibility(
         raise HTTPException(status_code=400, detail="Pick two different profiles")
     profile_a = _owned_profile(db, user, payload.profile_a_id)
     profile_b = _owned_profile(db, user, payload.profile_b_id)
-    return build_compatibility(profile_a.birth_datetime, profile_b.birth_datetime)
+    check_and_consume("compatibility", user, db)
+    result = build_compatibility(profile_a.birth_datetime, profile_b.birth_datetime)
+    db.commit()
+    return result
 
 
 @router.post("/compatibility/deep", response_model=DeepCompatibility)
@@ -137,7 +159,10 @@ def compatibility_deep(
         raise HTTPException(status_code=400, detail="Pick two different profiles")
     profile_a = _owned_profile(db, user, payload.profile_a_id)
     profile_b = _owned_profile(db, user, payload.profile_b_id)
-    return build_deep_compatibility_reading(
+    check_and_consume("compatibility", user, db)
+    result = build_deep_compatibility_reading(
         profile_a.name, profile_a.birth_datetime, profile_a.gender,
         profile_b.name, profile_b.birth_datetime, profile_b.gender,
     )
+    db.commit()
+    return result

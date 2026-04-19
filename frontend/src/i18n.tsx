@@ -28,6 +28,9 @@ const en: Record<string, string> = {
   "common.delete": "Delete",
   "common.language": "Language",
   "common.footer": "Ba Zi • Numerology • Compatibility — not medical, financial, or legal advice.",
+  "common.upgrade": "Upgrade to Premium",
+  "common.upgrade_cta": "Free tier used. Upgrade to Premium ($19/mo) for unlimited access.",
+  "common.premium_only": "Premium only",
 
   // Auth
   "auth.suite": "Metaphysical Suite",
@@ -376,6 +379,9 @@ const zh: Record<string, string> = {
   "common.delete": "删除",
   "common.language": "语言",
   "common.footer": "八字 • 号码 • 合婚 —— 非医疗、理财、法律建议。",
+  "common.upgrade": "升级尊享版",
+  "common.upgrade_cta": "免费额度已用完。升级尊享版（$19/月）可无限使用。",
+  "common.premium_only": "仅限尊享版",
 
   "auth.suite": "命理套件",
   "auth.signin": "登录",
@@ -709,6 +715,9 @@ const ms: Record<string, string> = {
   "common.delete": "Padam",
   "common.language": "Bahasa",
   "common.footer": "Ba Zi • Numerologi • Keserasian — bukan nasihat perubatan, kewangan atau undang-undang.",
+  "common.upgrade": "Naik Taraf Premium",
+  "common.upgrade_cta": "Kuota percuma tamat. Naik taraf Premium ($19/bulan) untuk akses tanpa had.",
+  "common.premium_only": "Premium sahaja",
 
   "auth.suite": "Suite Metafizik",
   "auth.signin": "Log masuk",

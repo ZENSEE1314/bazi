@@ -45,6 +45,13 @@ def test_numerology_rejects_empty(auth_client: TestClient):
 
 
 def test_compatibility_between_two_profiles(auth_client: TestClient):
+    # Need two profiles + unlimited compatibility; promote user to premium.
+    from backend.app.db import SessionLocal
+    from backend.app.models import User
+    with SessionLocal() as db:
+        u = db.query(User).filter(User.email == "test@example.com").first()
+        u.is_premium = True
+        db.commit()
     a = _make(auth_client, "Alice", "2000-01-01T12:00:00")
     b = _make(auth_client, "Bob", "1995-06-15T08:00:00")
     resp = auth_client.post(

@@ -73,6 +73,11 @@ def _ensure_user_columns() -> None:
         ("is_admin", "BOOLEAN NOT NULL DEFAULT FALSE"),
         ("referral_code", "VARCHAR(16)"),
         ("referred_by_id", "INTEGER"),
+        ("free_numerology_uses", "INTEGER NOT NULL DEFAULT 0"),
+        ("free_compatibility_uses", "INTEGER NOT NULL DEFAULT 0"),
+        ("free_name_uses", "INTEGER NOT NULL DEFAULT 0"),
+        ("free_fengshui_uses", "INTEGER NOT NULL DEFAULT 0"),
+        ("free_chat_messages", "INTEGER NOT NULL DEFAULT 0"),
     ]
     with engine.begin() as conn:
         for col_name, ddl in additions:

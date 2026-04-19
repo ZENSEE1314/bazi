@@ -25,11 +25,11 @@ export function Shell() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-ink/10 bg-white/80 backdrop-blur">
-        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="font-display text-xl tracking-tight">八字</span>
-            <span className="font-display text-base text-muted">Metaphysical Suite</span>
-          </div>
+        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-2">
+          <NavLink to="/" className="flex items-center gap-2 shrink-0">
+            <img src="/favicon.svg" alt="八字" className="w-8 h-8 rounded-lg" />
+            <span className="font-display text-base text-muted hidden sm:inline">Metaphysical Suite</span>
+          </NavLink>
           <nav className="hidden md:flex items-center gap-1">
             {links.map((l) => (
               <NavLink

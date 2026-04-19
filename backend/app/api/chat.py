@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import get_current_user
 from ..models import ChatMessage, ChatSession, Profile, User
+from ..quota import check_and_consume
 from ..schemas import (
     ChatMessageCreate,
     ChatMessageOut,
@@ -69,6 +70,9 @@ def send_message(
         profile = db.get(Profile, payload.profile_id)
         if profile is None or profile.owner_id != user.id:
             raise HTTPException(status_code=404, detail="Profile not found")
+
+    # Quota check before any expensive work.
+    check_and_consume("chat", user, db)
 
     # Resolve or create session
     if payload.session_id is not None:
