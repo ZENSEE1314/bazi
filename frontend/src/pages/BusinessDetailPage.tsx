@@ -82,8 +82,8 @@ export function BusinessDetailPage() {
       </section>
 
       {/* Owner compatibility */}
-      <section className="rounded-2xl border border-ink/10 bg-white p-5">
-        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="text-xs uppercase tracking-wider text-muted">{t("biz.owner_match")}</div>
           {best && (
             <div className="text-xs">
@@ -92,31 +92,110 @@ export function BusinessDetailPage() {
           )}
         </div>
         {data.owner_matches.length === 0 ? (
-          <div className="text-sm text-muted">{t("biz.no_profiles")}</div>
+          <div className="rounded-2xl border border-ink/10 bg-white p-5 text-sm text-muted">
+            {t("biz.no_profiles")}
+          </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="space-y-3">
             {data.owner_matches.map((m) => (
               <div
                 key={m.profile_id}
-                className={`rounded-xl border p-4 flex flex-col ${
+                className={`rounded-2xl border p-5 ${
                   m.profile_id === data.best_match_profile_id
-                    ? "border-wood/40 bg-wood-soft/40"
+                    ? "border-wood/40 bg-wood-soft/30"
                     : "border-ink/10 bg-white"
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">{m.profile_name}</div>
+                {/* Header: name + score */}
+                <div className="flex items-start justify-between flex-wrap gap-3">
+                  <div>
+                    <div className="font-display text-xl">{m.profile_name}</div>
+                    <div className="text-xs text-muted mt-1">
+                      {t("biz.match_for")}: {m.profile_name}
+                    </div>
+                    <div className="mt-2 text-xs">
+                      <span className={`chip ${elementClass[m.dm_relation.a_element]}`}>owner · {m.dm_relation.a_element}</span>
+                      <span className="mx-1 text-muted">↔</span>
+                      <span className={`chip ${elementClass[m.dm_relation.b_element]}`}>biz · {m.dm_relation.b_element}</span>
+                    </div>
+                    <div className="text-sm mt-2">{m.verdict}</div>
+                  </div>
                   <ScoreRing score={m.score} label={t("biz.match_score")} />
                 </div>
-                <div className="text-xs text-muted mt-2">
-                  <span className={`chip ${elementClass[m.dm_relation.a_element]}`}>{m.dm_relation.a_element}</span>
-                  <span className="mx-1">↔</span>
-                  <span className={`chip ${elementClass[m.dm_relation.b_element]}`}>{m.dm_relation.b_element}</span>
+
+                {/* AI reading */}
+                <div className="mt-4 rounded-xl bg-parchment/70 border border-ink/5 p-3">
+                  <div className="text-xs uppercase tracking-wider text-muted mb-1">
+                    {t("biz.ai_reading")}
+                  </div>
+                  <p className="text-sm">{m.ai_reading}</p>
                 </div>
-                <div className="text-xs mt-2">{m.verdict}</div>
-                <div className="text-[11px] text-muted mt-2">
-                  {m.harmony_count} ♡ · {m.tension_count} ⚡
+
+                {/* Element exchange */}
+                <div className="mt-4">
+                  <div className="text-xs uppercase tracking-wider text-muted mb-2">
+                    {t("biz.element_exchange")}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 text-xs">
+                    {m.business_feeds_owner && (
+                      <span className="chip element-wood">{t("biz.feeds_owner")}</span>
+                    )}
+                    {m.business_drains_owner && (
+                      <span className="chip element-fire">{t("biz.drains_owner")}</span>
+                    )}
+                    <span className="chip element-earth">
+                      {t("biz.supplies_useful_god")}: <b className="ml-1">{m.owner_useful_god}</b> · {m.business_supplies_useful_god_pct.toFixed(1)}%
+                    </span>
+                    {m.business_amplifies_avoid_god_pct >= 20 && (
+                      <span className="chip element-fire">
+                        {t("biz.amplifies_avoid_god")}: <b className="ml-1">{m.owner_avoid_god}</b> · {m.business_amplifies_avoid_god_pct.toFixed(1)}%
+                      </span>
+                    )}
+                  </div>
                 </div>
+
+                {/* Area scores */}
+                <div className="mt-4">
+                  <div className="text-xs uppercase tracking-wider text-muted mb-2">
+                    {t("biz.area_breakdown")}
+                  </div>
+                  <div className="grid grid-cols-5 gap-2 text-center">
+                    {(["romance", "communication", "finance", "family", "long_term"] as const).map((k) => (
+                      <div key={k} className="rounded-lg border border-ink/5 p-2">
+                        <div className="text-[10px] text-muted uppercase tracking-wider">
+                          {t(`comp.${k}`)}
+                        </div>
+                        <div className="font-display text-xl">{m.area_scores[k]}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Harmony / Tension */}
+                {(m.harmony.length > 0 || m.tension.length > 0) && (
+                  <div className="mt-4 grid md:grid-cols-2 gap-3">
+                    {m.harmony.length > 0 && (
+                      <div>
+                        <div className="text-xs uppercase tracking-wider text-wood mb-1">
+                          ♡ {t("biz.harmony_signals")}
+                        </div>
+                        <ul className="list-disc pl-5 text-xs space-y-0.5">
+                          {m.harmony.map((h, i) => <li key={i}>{h}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                    {m.tension.length > 0 && (
+                      <div>
+                        <div className="text-xs uppercase tracking-wider text-fire mb-1">
+                          ⚡ {t("biz.tension_signals")}
+                        </div>
+                        <ul className="list-disc pl-5 text-xs space-y-0.5">
+                          {m.tension.map((x, i) => <li key={i}>{x}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

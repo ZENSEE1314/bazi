@@ -43,9 +43,22 @@ export type BusinessOwnerMatch = {
   score: number;
   verdict: string;
   dm_relation: { a_element: string; b_element: string; kind: string; note: string };
+  harmony: string[];
+  tension: string[];
   harmony_count: number;
   tension_count: number;
   element_blend: Record<string, number>;
+
+  owner_useful_god: string;
+  owner_avoid_god: string;
+  business_supplies_useful_god_pct: number;
+  business_amplifies_avoid_god_pct: number;
+  business_feeds_owner: boolean;
+  business_drains_owner: boolean;
+  area_scores: { romance: number; communication: number; finance: number; family: number; long_term: number };
+  shared_weakness: string[];
+  complementary_strengths: string[];
+  ai_reading: string;
 };
 
 export type BusinessReading = {

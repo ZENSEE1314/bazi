@@ -25,6 +25,9 @@ from ..schemas import (
 from ..services.readings import _solar_year_for, build_deep_bazi
 from ...core.bazi.calculator import four_pillars
 from ...core.bazi.compatibility import build_deep_compatibility
+from ...core.bazi.elements import element_balance
+from ...core.bazi.strength import day_master_strength
+from ...core.bazi.ten_gods import CONTROLS, PRODUCES
 from ...core.fengshui.house import analyse_home
 from ...core.numerology.chinese_name import analyse_chinese_name
 
@@ -137,6 +140,97 @@ def delete_business(
 
 # --- Combined reading -----------------------------------------------------
 
+def _compose_owner_reading(
+    owner_name: str,
+    owner_dm: str,
+    owner_useful: str,
+    owner_avoid: str,
+    biz_dominant: str,
+    ug_pct: float,
+    ag_pct: float,
+    feeds: bool,
+    drains: bool,
+    score: int,
+    harmony: list[str],
+    tension: list[str],
+    lang: str,
+) -> str:
+    """Short personalised paragraph explaining business-vs-owner fit."""
+    tpl = {
+        "en": {
+            "head_good":  "{name}, this business is a genuinely good match for you.",
+            "head_ok":    "{name}, this business is workable for you with some care.",
+            "head_bad":   "{name}, this business works against your chart on key axes.",
+            "feeds":      "The business's dominant {biz} element produces your {own} Day Master — it feeds you energy.",
+            "drains":     "The business's dominant {biz} element controls your {own} Day Master — it will feel draining over time.",
+            "useful_hi":  "It supplies your Useful God ({useful}) at {pct}% of its chart — strongly supportive.",
+            "useful_mid": "It supplies your Useful God ({useful}) at {pct}% — modest support.",
+            "useful_low": "Your Useful God ({useful}) is thin ({pct}%) in this business — supplement with colours, rituals, or partners.",
+            "avoid_hi":   "Watch out: it amplifies your Avoid God ({avoid}) at {pct}% — this will slowly wear you down.",
+            "harmony":    "Harmony signals: {items}.",
+            "tension":    "Friction signals: {items}.",
+        },
+        "zh": {
+            "head_good":  "{name}，此事业与您的命盘契合良好。",
+            "head_ok":    "{name}，此事业可行，但需要用心经营。",
+            "head_bad":   "{name}，此事业在关键方面与您的命盘相冲。",
+            "feeds":      "事业主导之{biz}行生您的日主{own}，能为您注入能量。",
+            "drains":     "事业主导之{biz}行克您的日主{own}，长期经营会令您消耗。",
+            "useful_hi":  "事业中您的用神（{useful}）占比高达 {pct}%，强有力地支持您。",
+            "useful_mid": "事业中您的用神（{useful}）约 {pct}%，有一定助益。",
+            "useful_low": "事业中您的用神（{useful}）仅 {pct}%，建议以色彩、仪式或合伙人补强。",
+            "avoid_hi":   "留意：事业中您的忌神（{avoid}）占 {pct}%，长期会慢慢消耗您。",
+            "harmony":    "和谐点：{items}。",
+            "tension":    "冲突点：{items}。",
+        },
+        "ms": {
+            "head_good":  "{name}, perniagaan ini benar-benar sesuai dengan anda.",
+            "head_ok":    "{name}, perniagaan ini boleh dikendalikan dengan pengurusan sedar.",
+            "head_bad":   "{name}, perniagaan ini bertentangan dengan carta anda pada paksi utama.",
+            "feeds":      "Unsur dominan {biz} perniagaan menyuburkan Day Master {own} anda — ia memberi tenaga.",
+            "drains":     "Unsur dominan {biz} perniagaan mengawal Day Master {own} anda — akan meletihkan dari masa ke masa.",
+            "useful_hi":  "Ia membekalkan Dewa Berguna anda ({useful}) sebanyak {pct}% dari carta — sokongan kuat.",
+            "useful_mid": "Ia membekalkan Dewa Berguna anda ({useful}) sebanyak {pct}% — sokongan sederhana.",
+            "useful_low": "Dewa Berguna anda ({useful}) hanya {pct}% dalam perniagaan — lengkapkan dengan warna, ritual, atau rakan kongsi.",
+            "avoid_hi":   "Perhatian: ia menguatkan Dewa Elakkan anda ({avoid}) sebanyak {pct}% — perlahan-lahan meletihkan anda.",
+            "harmony":    "Isyarat harmoni: {items}.",
+            "tension":    "Isyarat ketegangan: {items}.",
+        },
+    }[lang if lang in ("en", "zh", "ms") else "en"]
+
+    from ...core.bazi.guidance import ELEMENT_NAME as EN
+    names = EN.get(lang, EN["en"])
+    own_name = names.get(owner_dm, owner_dm)
+    biz_name = names.get(biz_dominant, biz_dominant)
+    useful_name = names.get(owner_useful, owner_useful)
+    avoid_name = names.get(owner_avoid, owner_avoid)
+
+    head = tpl["head_good"] if score >= 65 else tpl["head_ok"] if score >= 45 else tpl["head_bad"]
+    parts: list[str] = [head.format(name=owner_name)]
+
+    if feeds:
+        parts.append(tpl["feeds"].format(biz=biz_name, own=own_name))
+    elif drains:
+        parts.append(tpl["drains"].format(biz=biz_name, own=own_name))
+
+    if ug_pct >= 25:
+        parts.append(tpl["useful_hi"].format(useful=useful_name, pct=ug_pct))
+    elif ug_pct >= 12:
+        parts.append(tpl["useful_mid"].format(useful=useful_name, pct=ug_pct))
+    else:
+        parts.append(tpl["useful_low"].format(useful=useful_name, pct=ug_pct))
+
+    if ag_pct >= 30:
+        parts.append(tpl["avoid_hi"].format(avoid=avoid_name, pct=ag_pct))
+
+    if harmony:
+        parts.append(tpl["harmony"].format(items="; ".join(harmony[:2])))
+    if tension:
+        parts.append(tpl["tension"].format(items="; ".join(tension[:2])))
+
+    return " ".join(parts)
+
+
 def _verdict_from_score(score: int, lang: str = "en") -> str:
     tpl = {
         "en": [
@@ -211,20 +305,60 @@ def business_reading(
         .all()
     )
     biz_fp = four_pillars(biz.open_datetime)
+    biz_bal = element_balance(biz_fp).as_dict
+    biz_total = sum(biz_bal.values()) or 1.0
+    biz_dominant = max(biz_bal, key=biz_bal.get)
+
     matches: list[BusinessOwnerMatch] = []
     best: BusinessOwnerMatch | None = None
     for p in profiles:
         p_fp = four_pillars(p.birth_datetime)
         c = build_deep_compatibility(p_fp, biz_fp, p.gender, None)
+
+        dms = day_master_strength(p_fp)
+        ug_pct = round(biz_bal.get(dms.useful_god, 0.0) / biz_total * 100.0, 1)
+        ag_pct = round(biz_bal.get(dms.avoid_god, 0.0) / biz_total * 100.0, 1)
+
+        feeds = PRODUCES.get(biz_dominant) == p_fp.day_master_element
+        drains = CONTROLS.get(biz_dominant) == p_fp.day_master_element
+
+        ai = _compose_owner_reading(
+            owner_name=p.name,
+            owner_dm=p_fp.day_master_element,
+            owner_useful=dms.useful_god,
+            owner_avoid=dms.avoid_god,
+            biz_dominant=biz_dominant,
+            ug_pct=ug_pct,
+            ag_pct=ag_pct,
+            feeds=feeds,
+            drains=drains,
+            score=c.total_score,
+            harmony=c.harmony,
+            tension=c.tension,
+            lang=lang,
+        )
+
         m = BusinessOwnerMatch(
             profile_id=p.id,
             profile_name=p.name,
             score=c.total_score,
             verdict=_verdict_from_score(c.total_score, lang),
             dm_relation=c.day_master_relation,
+            harmony=c.harmony,
+            tension=c.tension,
             harmony_count=len(c.harmony),
             tension_count=len(c.tension),
             element_blend=c.element_blend,
+            owner_useful_god=dms.useful_god,
+            owner_avoid_god=dms.avoid_god,
+            business_supplies_useful_god_pct=ug_pct,
+            business_amplifies_avoid_god_pct=ag_pct,
+            business_feeds_owner=feeds,
+            business_drains_owner=drains,
+            area_scores=c.area_scores,
+            shared_weakness=c.shared_weakness,
+            complementary_strengths=c.complementary_strengths,
+            ai_reading=ai,
         )
         matches.append(m)
         if best is None or m.score > best.score:

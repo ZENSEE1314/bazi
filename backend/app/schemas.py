@@ -121,9 +121,23 @@ class BusinessOwnerMatch(BaseModel):
     score: int
     verdict: str
     dm_relation: dict
+    harmony: list[str]
+    tension: list[str]
     harmony_count: int
     tension_count: int
     element_blend: dict[str, float]
+
+    # Owner-specific axes
+    owner_useful_god: str
+    owner_avoid_god: str
+    business_supplies_useful_god_pct: float   # % of business chart that is owner's Useful God
+    business_amplifies_avoid_god_pct: float   # % of business chart that is owner's Avoid God
+    business_feeds_owner: bool                # True if business dominant element produces owner's DM
+    business_drains_owner: bool               # True if business dominant element controls owner's DM
+    area_scores: dict[str, int]               # romance/communication/finance/family/long_term
+    shared_weakness: list[str]
+    complementary_strengths: list[str]
+    ai_reading: str                            # multi-sentence plain-English verdict
 
 
 class BusinessReading(BaseModel):
