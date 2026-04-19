@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     access_token_minutes: int = 60 * 24  # 24h
 
     free_profile_limit: int = 1
+    free_business_limit: int = 1
     free_numerology_uses: int = 1
     free_compatibility_uses: int = 1
     free_name_uses: int = 1

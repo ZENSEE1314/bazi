@@ -14,6 +14,8 @@ import { CompatibilityPage } from "./pages/CompatibilityPage";
 import { ReferralsPage } from "./pages/ReferralsPage";
 import { AdminPage } from "./pages/AdminPage";
 import { UpgradePage } from "./pages/UpgradePage";
+import { BusinessesPage } from "./pages/BusinessesPage";
+import { BusinessDetailPage } from "./pages/BusinessDetailPage";
 
 function Private({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth();
@@ -56,6 +58,8 @@ export default function App() {
           <Route path="/fengshui" element={<FengShuiPage />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/compatibility" element={<CompatibilityPage />} />
+          <Route path="/businesses" element={<BusinessesPage />} />
+          <Route path="/businesses/:id" element={<BusinessDetailPage />} />
           <Route path="/referrals" element={<ReferralsPage />} />
           <Route path="/upgrade" element={<UpgradePage />} />
           <Route path="/admin" element={<AdminPage />} />

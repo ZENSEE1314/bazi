@@ -6,6 +6,7 @@ function buildLinks(t: (k: string) => string, isAdmin: boolean, isPremium: boole
   const base = [
     { to: "/", label: t("nav.dashboard"), end: true },
     { to: "/profiles", label: t("nav.profiles") },
+    { to: "/businesses", label: t("nav.business") },
     { to: "/numerology", label: t("nav.numbers") },
     { to: "/name", label: t("nav.name") },
     { to: "/fengshui", label: t("nav.fengshui") },

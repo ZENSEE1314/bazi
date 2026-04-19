@@ -69,6 +69,28 @@ class Profile(Base):
     owner: Mapped[User] = relationship(back_populates="profiles")
 
 
+class Business(Base):
+    __tablename__ = "businesses"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    chinese_name: Mapped[str | None] = mapped_column(String(60))
+    open_datetime: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    location: Mapped[str | None] = mapped_column(String(200))
+    facing_direction: Mapped[str | None] = mapped_column(String(3))  # N, NE, E, ...
+    industry: Mapped[str | None] = mapped_column(String(80))
+    notes: Mapped[str | None] = mapped_column(String(500))
+    is_main: Mapped[bool] = mapped_column(default=False, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class ChatSession(Base):
     __tablename__ = "chat_sessions"
 

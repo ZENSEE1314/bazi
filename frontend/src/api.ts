@@ -24,6 +24,40 @@ export type User = {
   stripe_subscription_id?: string | null;
 };
 
+export type Business = {
+  id: number;
+  name: string;
+  chinese_name: string | null;
+  open_datetime: string;
+  location: string | null;
+  facing_direction: string | null;
+  industry: string | null;
+  notes: string | null;
+  is_main: boolean;
+  created_at: string;
+};
+
+export type BusinessOwnerMatch = {
+  profile_id: number;
+  profile_name: string;
+  score: number;
+  verdict: string;
+  dm_relation: { a_element: string; b_element: string; kind: string; note: string };
+  harmony_count: number;
+  tension_count: number;
+  element_blend: Record<string, number>;
+};
+
+export type BusinessReading = {
+  business: Business;
+  chart: DeepBaZi;
+  name_reading: ChineseNameReading | null;
+  feng_shui: FengShuiReading | null;
+  owner_matches: BusinessOwnerMatch[];
+  best_match_profile_id: number | null;
+  summary: string;
+};
+
 export type BillingConfig = {
   enabled: boolean;
   publishable_key: string | null;
@@ -579,6 +613,18 @@ export const api = {
       `/api/admin/commissions/pay_all${period_month ? `?period_month=${period_month}` : ""}`,
       { method: "POST" },
     ),
+
+  // Businesses
+  listBusinesses: () => request<Business[]>("/api/businesses"),
+  createBusiness: (b: Partial<Business>) =>
+    request<Business>("/api/businesses", { method: "POST", body: JSON.stringify(b) }),
+  getBusiness: (id: number) => request<Business>(`/api/businesses/${id}`),
+  updateBusiness: (id: number, b: Partial<Business>) =>
+    request<Business>(`/api/businesses/${id}`, { method: "PATCH", body: JSON.stringify(b) }),
+  deleteBusiness: (id: number) =>
+    request<void>(`/api/businesses/${id}`, { method: "DELETE" }),
+  businessReading: (id: number, lang?: string) =>
+    request<BusinessReading>(`/api/businesses/${id}/reading${lang ? `?lang=${lang}` : ""}`),
 
   // Billing
   billingConfig: () => request<BillingConfig>("/api/billing/config"),

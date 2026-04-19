@@ -76,6 +76,66 @@ class ProfileOut(BaseModel):
     created_at: datetime
 
 
+# --- Business profiles ---------------------------------------------------
+
+class BusinessCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=160)
+    chinese_name: str | None = Field(default=None, max_length=60)
+    open_datetime: datetime
+    location: str | None = Field(default=None, max_length=200)
+    facing_direction: str | None = Field(default=None, max_length=3)
+    industry: str | None = Field(default=None, max_length=80)
+    notes: str | None = Field(default=None, max_length=500)
+    is_main: bool = False
+
+
+class BusinessUpdate(BaseModel):
+    name: str | None = Field(default=None, max_length=160)
+    chinese_name: str | None = Field(default=None, max_length=60)
+    open_datetime: datetime | None = None
+    location: str | None = Field(default=None, max_length=200)
+    facing_direction: str | None = Field(default=None, max_length=3)
+    industry: str | None = Field(default=None, max_length=80)
+    notes: str | None = Field(default=None, max_length=500)
+    is_main: bool | None = None
+
+
+class BusinessOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    chinese_name: str | None
+    open_datetime: datetime
+    location: str | None
+    facing_direction: str | None
+    industry: str | None
+    notes: str | None
+    is_main: bool
+    created_at: datetime
+
+
+class BusinessOwnerMatch(BaseModel):
+    profile_id: int
+    profile_name: str
+    score: int
+    verdict: str
+    dm_relation: dict
+    harmony_count: int
+    tension_count: int
+    element_blend: dict[str, float]
+
+
+class BusinessReading(BaseModel):
+    business: BusinessOut
+    chart: DeepBaZiReading
+    name_reading: ChineseNameReadingOut | None = None
+    feng_shui: FengShuiReadingOut | None = None
+    owner_matches: list[BusinessOwnerMatch] = Field(default_factory=list)
+    best_match_profile_id: int | None = None
+    summary: str
+
+
 class Pillar(BaseModel):
     stem: str
     branch: str
