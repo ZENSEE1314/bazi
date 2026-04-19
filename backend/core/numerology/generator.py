@@ -67,7 +67,12 @@ def _preferred_pool(useful_god: str, avoid_god: str | None) -> tuple[list[int], 
     return favored, avoid
 
 
-def _next_digit(prev: int, pool: list[int], avoid: set[int]) -> int:
+def _next_digit(
+    prev: int,
+    pool: list[int],
+    avoid: set[int],
+    rng: random.Random,
+) -> int:
     """Pick next digit so (prev, next) forms an auspicious pair; prefer pool."""
     candidates: list[int] = []
     for d in pool:
@@ -77,25 +82,28 @@ def _next_digit(prev: int, pool: list[int], avoid: set[int]) -> int:
         if reading and reading.category_key in AUSPICIOUS_TARGETS:
             candidates.append(d)
     if candidates:
-        return random.choice(candidates)
+        return rng.choice(candidates)
     # Fallback: try any non-avoid digit that forms an auspicious pair.
+    fallback: list[int] = []
     for d in range(10):
         if d in avoid or d == prev:
             continue
         reading = pair_category(prev, d)
         if reading and reading.category_key in AUSPICIOUS_TARGETS:
-            return d
+            fallback.append(d)
+    if fallback:
+        return rng.choice(fallback)
     # Last resort: pick a neutral
     for n in _NEUTRAL:
         if n not in avoid:
             return n
-    return random.choice(pool)
+    return rng.choice(pool)
 
 
-def _gen_one(length: int, pool: list[int], avoid: set[int]) -> list[int]:
-    seq = [random.choice(pool)]
+def _gen_one(length: int, pool: list[int], avoid: set[int], rng: random.Random) -> list[int]:
+    seq = [rng.choice(pool)]
     while len(seq) < length:
-        seq.append(_next_digit(seq[-1], pool, avoid))
+        seq.append(_next_digit(seq[-1], pool, avoid, rng))
     return seq
 
 
@@ -116,13 +124,14 @@ def generate_numbers(
     pool, avoid = _preferred_pool(useful_god, avoid_god)
     favored_set = set(pool) - set(_NEUTRAL)
 
+    # Dedicated RNG seeded from OS entropy — independent per call, so every
+    # request produces a genuinely fresh batch.
     rng = random.Random()
     seen: set[str] = set()
     results: list[GeneratedNumber] = []
 
     for _ in range(attempts):
-        random.seed(rng.random())  # fresh entropy per attempt
-        seq = _gen_one(length, pool, avoid)
+        seq = _gen_one(length, pool, avoid, rng)
         s = "".join(str(d) for d in seq)
         if s in seen:
             continue
@@ -159,14 +168,22 @@ def generate_numbers(
         key=lambda r: (r.overall, r.auspicious_pair_count, -r.avoid_digit_count),
         reverse=True,
     )
-    # Deduplicate by prefix-stripped form to avoid near-duplicates
+    # Build a strong pool (top 4× count, min 40), shuffle, then take `count`.
+    # This keeps quality high but guarantees a different mix on every call.
+    pool_size = max(count * 4, 40)
+    strong = results[:pool_size]
+    rng.shuffle(strong)
+    # Re-rank the shuffled subset slightly so the best still drift toward the top.
+    strong.sort(
+        key=lambda r: (r.overall + rng.uniform(-5, 5), r.auspicious_pair_count),
+        reverse=True,
+    )
     unique: list[GeneratedNumber] = []
     seen2: set[str] = set()
-    for r in results:
-        key = r.number
-        if key in seen2:
+    for r in strong:
+        if r.number in seen2:
             continue
-        seen2.add(key)
+        seen2.add(r.number)
         unique.append(r)
         if len(unique) >= count:
             break

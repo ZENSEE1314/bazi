@@ -102,6 +102,16 @@ def profile_deep(
     return build_deep_bazi(profile.birth_datetime, profile.gender, lang=lang)
 
 
+_PURPOSE_LABEL = {
+    "phone": "Phone number",
+    "bank": "Bank account",
+    "car": "Car plate",
+    "id": "ID number",
+    "credit": "Credit card",
+    "custom": "Custom number",
+}
+
+
 @router.post("/numerology/generate", response_model=GeneratedNumberResponse)
 def generate_lucky_numbers(
     payload: NumerologyGenerateRequest,
@@ -110,7 +120,8 @@ def generate_lucky_numbers(
 ) -> GeneratedNumberResponse:
     """Generate candidate numbers optimised for a profile's Useful God.
 
-    Free for both tiers — uses no quota since no new reading is stored.
+    Each call produces a fresh random batch and is saved to history so the user
+    can revisit previous suggestions.
     """
     from ...core.bazi.calculator import four_pillars
     from ...core.bazi.guidance import ELEMENT_GUIDANCE
@@ -131,7 +142,7 @@ def generate_lucky_numbers(
         count=payload.count,
         prefix=payload.prefix,
     )
-    return GeneratedNumberResponse(
+    response = GeneratedNumberResponse(
         profile_id=profile.id,
         profile_name=profile.name,
         useful_god=dms.useful_god,
@@ -141,6 +152,21 @@ def generate_lucky_numbers(
         purpose=payload.purpose,
         candidates=[GeneratedNumberOut(**c.__dict__) for c in candidates],
     )
+
+    if response.candidates:
+        purpose_label = _PURPOSE_LABEL.get(payload.purpose, payload.purpose.title())
+        top = response.candidates[0].number
+        label = f"{purpose_label} · {profile.name} · {top} (+{len(response.candidates) - 1} more)"
+        save_reading(
+            db, user,
+            kind="numerology",
+            label=label,
+            subtype=f"generator:{payload.purpose}",
+            payload=response.model_dump(mode="json"),
+        )
+        db.commit()
+
+    return response
 
 
 @router.post("/numerology/deep", response_model=DeepNumerologyReading)
