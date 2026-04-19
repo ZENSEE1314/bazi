@@ -18,6 +18,13 @@ const en: Record<string, string> = {
   "nav.upgrade": "Upgrade",
   "nav.business": "Business",
 
+  // Dropdown menu
+  "menu.menu": "Menu",
+  "menu.charts": "Charts",
+  "menu.readings": "Readings",
+  "menu.tools": "Tools",
+  "menu.account": "Account",
+
   "biz.title": "Businesses",
   "biz.new": "+ New business",
   "biz.empty": "No businesses yet. Add one to see its Ba Zi chart, Chinese-name reading, feng shui, and match to your personal chart.",
@@ -97,6 +104,8 @@ const en: Record<string, string> = {
   "billing.quantity": "Quantity",
   "billing.credits_on_hand": "feature credits available",
   "billing.slots_on_hand": "extra profile slots",
+  "billing.credits_chip": "credits",
+  "billing.slots_chip": "slots",
 
   // Common
   "common.signout": "Sign out",
@@ -628,6 +637,13 @@ const zh: Record<string, string> = {
   "nav.upgrade": "升级",
   "nav.business": "商业",
 
+  // 菜单
+  "menu.menu": "菜单",
+  "menu.charts": "命盘",
+  "menu.readings": "解读",
+  "menu.tools": "工具",
+  "menu.account": "账户",
+
   "biz.title": "商业",
   "biz.new": "+ 新增商业",
   "biz.empty": "尚无商业。新增后可查看开业八字、名称五格、店铺风水，以及与您命盘的契合度。",
@@ -707,6 +723,8 @@ const zh: Record<string, string> = {
   "billing.quantity": "数量",
   "billing.credits_on_hand": "点数可用",
   "billing.slots_on_hand": "额外命盘名额",
+  "billing.credits_chip": "点数",
+  "billing.slots_chip": "名额",
 
   "common.signout": "退出",
   "common.free": "免费",
@@ -1222,6 +1240,13 @@ const ms: Record<string, string> = {
   "nav.upgrade": "Naik Taraf",
   "nav.business": "Perniagaan",
 
+  // Menu
+  "menu.menu": "Menu",
+  "menu.charts": "Carta",
+  "menu.readings": "Bacaan",
+  "menu.tools": "Alat",
+  "menu.account": "Akaun",
+
   "biz.title": "Perniagaan",
   "biz.new": "+ Perniagaan baru",
   "biz.empty": "Belum ada perniagaan. Tambah satu untuk melihat carta Ba Zi pembukaan, bacaan nama Cina, feng shui, dan keserasian dengan carta peribadi.",
@@ -1301,6 +1326,8 @@ const ms: Record<string, string> = {
   "billing.quantity": "Kuantiti",
   "billing.credits_on_hand": "kredit ciri tersedia",
   "billing.slots_on_hand": "slot profil tambahan",
+  "billing.credits_chip": "kredit",
+  "billing.slots_chip": "slot",
 
   "common.signout": "Log keluar",
   "common.free": "PERCUMA",
