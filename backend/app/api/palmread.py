@@ -1,4 +1,8 @@
-"""Palm reading (手相) endpoint."""
+"""Palm reading (手相) endpoint.
+
+Flow: browser submits a photo of an outstretched palm → Ollama vision
+extracts the 12 traits → deterministic rule engine renders the narrative.
+"""
 
 from __future__ import annotations
 
@@ -12,6 +16,7 @@ from ..models import Profile, User
 from ..quota import check_and_consume
 from ..schemas import PalmLineOut, PalmReadingOut, PalmReadingRequest
 from ...core.palmread.engine import analyse_palm
+from ...core.palmread.vision import extract_palm_traits
 
 router = APIRouter(prefix="/api/palm", tags=["palm-reading"])
 
@@ -31,15 +36,20 @@ def palm_reading(
 
     check_and_consume("palmread", user, db)
 
+    try:
+        t = extract_palm_traits(payload.image)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
     r = analyse_palm(
-        hand_shape=payload.hand_shape,
-        dominant_hand=payload.dominant_hand,
-        finger_length=payload.finger_length,
-        life_length=payload.life_length,   life_depth=payload.life_depth,
-        heart_length=payload.heart_length, heart_depth=payload.heart_depth,
-        head_length=payload.head_length,   head_depth=payload.head_depth,
-        fate_length=payload.fate_length,   fate_depth=payload.fate_depth,
-        marriage_lines=payload.marriage_lines,
+        hand_shape=t["hand_shape"],
+        dominant_hand=t["dominant_hand"],
+        finger_length=t["finger_length"],
+        life_length=t["life_length"],   life_depth=t["life_depth"],
+        heart_length=t["heart_length"], heart_depth=t["heart_depth"],
+        head_length=t["head_length"],   head_depth=t["head_depth"],
+        fate_length=t["fate_length"],   fate_depth=t["fate_depth"],
+        marriage_lines=t["marriage_lines"],
     )
 
     out = PalmReadingOut(

@@ -698,17 +698,11 @@ class DeepNumerologyReading(BaseModel):
 # --- Face reading (面相) -----------------------------------------------------
 
 class FaceReadingRequest(BaseModel):
+    """Request body for /api/face/reading. The image is required —
+    the AI reads it directly and derives every trait below automatically."""
+
     profile_id: int | None = None
-    face_shape: str = Field(pattern="^(round|square|oval|long|heart|diamond)$")
-    forehead:   str = Field(pattern="^(high|medium|low|narrow|wide)$")
-    brows:      str = Field(pattern="^(thick|medium|thin|arched|straight)$")
-    eyes:       str = Field(pattern="^(big|medium|small|phoenix|deep)$")
-    nose:       str = Field(pattern="^(straight|high|flat|hooked|small)$")
-    mouth:      str = Field(pattern="^(full|medium|thin|wide|small)$")
-    ears:       str = Field(pattern="^(large|medium|small|attached|detached)$")
-    chin:       str = Field(pattern="^(strong|rounded|pointed|double|receding)$")
-    cheeks:     str = Field(pattern="^(high|full|flat|hollow)$")
-    skin:       str = Field(pattern="^(bright|neutral|dull|ruddy)$")
+    image: str = Field(min_length=32, description="data-URL or raw base64 JPEG/PNG")
 
 
 class FaceFeatureOut(BaseModel):
@@ -741,19 +735,11 @@ class FaceReadingOut(BaseModel):
 # --- Palm reading (手相) -----------------------------------------------------
 
 class PalmReadingRequest(BaseModel):
+    """Request body for /api/palm/reading. The image is required —
+    the AI reads it directly and derives every trait below automatically."""
+
     profile_id: int | None = None
-    hand_shape:    str = Field(pattern="^(earth|air|water|fire)$")
-    dominant_hand: str = Field(pattern="^(left|right)$")
-    finger_length: str = Field(pattern="^(short|medium|long)$")
-    life_length:   str = Field(pattern="^(long|medium|short|absent)$")
-    life_depth:    str = Field(pattern="^(deep|medium|shallow|broken)$")
-    heart_length:  str = Field(pattern="^(long|medium|short|absent)$")
-    heart_depth:   str = Field(pattern="^(deep|medium|shallow|broken)$")
-    head_length:   str = Field(pattern="^(long|medium|short|absent)$")
-    head_depth:    str = Field(pattern="^(deep|medium|shallow|broken)$")
-    fate_length:   str = Field(pattern="^(long|medium|short|absent)$")
-    fate_depth:    str = Field(pattern="^(deep|medium|shallow|broken)$")
-    marriage_lines: str = Field(default="one", pattern="^(none|one|two|many)$")
+    image: str = Field(min_length=32, description="data-URL or raw base64 JPEG/PNG")
 
 
 class PalmLineOut(BaseModel):

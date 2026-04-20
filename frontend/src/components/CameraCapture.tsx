@@ -5,10 +5,10 @@ type Props = {
   // 'user' for face (front camera), 'environment' for palm (rear camera).
   // If the device doesn't have the requested camera we fall back to any camera.
   facingMode?: "user" | "environment";
-  // Optional: called after capture with a data URL for preview. We don't
-  // upload the image — users will describe features — but seeing yourself
-  // helps answer the form accurately.
+  // Called with a data-URL image once the user captures / uploads a photo.
   onCapture?: (dataUrl: string) => void;
+  // Called when the user taps Retake so the parent can clear the pending image.
+  onClear?: () => void;
 };
 
 /**
@@ -23,7 +23,7 @@ type Props = {
  *   a user gesture. We tell the user clearly when either precondition is
  *   missing, rather than just showing a blank viewfinder.
  */
-export function CameraCapture({ facingMode = "user", onCapture }: Props) {
+export function CameraCapture({ facingMode = "user", onCapture, onClear }: Props) {
   const { t } = useI18n();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -125,6 +125,7 @@ export function CameraCapture({ facingMode = "user", onCapture }: Props) {
 
   function retake() {
     setSnapshot(null);
+    onClear?.();
     openCamera();
   }
 

@@ -1,49 +1,14 @@
 import { useEffect, useState } from "react";
-import { api, FaceReading, FaceReadingRequest, Profile } from "../api";
+import { api, FaceReading, Profile } from "../api";
 import { CameraCapture } from "../components/CameraCapture";
 import { HistorySidebar } from "../components/HistorySidebar";
 import { useI18n } from "../i18n";
-
-type Shape = FaceReadingRequest["face_shape"];
-type Size = FaceReadingRequest["forehead"];
-type Brow = FaceReadingRequest["brows"];
-type Eye = FaceReadingRequest["eyes"];
-type Nose = FaceReadingRequest["nose"];
-type Mouth = FaceReadingRequest["mouth"];
-type Ear = FaceReadingRequest["ears"];
-type Chin = FaceReadingRequest["chin"];
-type Cheek = FaceReadingRequest["cheeks"];
-type Skin = FaceReadingRequest["skin"];
-
-const SHAPES: Shape[] = ["round", "square", "oval", "long", "heart", "diamond"];
-const FOREHEADS: Size[] = ["high", "medium", "low", "narrow", "wide"];
-const BROWS: Brow[] = ["thick", "medium", "thin", "arched", "straight"];
-const EYES: Eye[] = ["big", "medium", "small", "phoenix", "deep"];
-const NOSES: Nose[] = ["straight", "high", "flat", "hooked", "small"];
-const MOUTHS: Mouth[] = ["full", "medium", "thin", "wide", "small"];
-const EARS: Ear[] = ["large", "medium", "small", "attached", "detached"];
-const CHINS: Chin[] = ["strong", "rounded", "pointed", "double", "receding"];
-const CHEEKS: Cheek[] = ["high", "full", "flat", "hollow"];
-const SKINS: Skin[] = ["bright", "neutral", "dull", "ruddy"];
-
-const DEFAULTS: FaceReadingRequest = {
-  face_shape: "oval",
-  forehead: "medium",
-  brows: "medium",
-  eyes: "medium",
-  nose: "straight",
-  mouth: "medium",
-  ears: "medium",
-  chin: "rounded",
-  cheeks: "full",
-  skin: "neutral",
-};
 
 export function FaceReadingPage() {
   const { t } = useI18n();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [profileId, setProfileId] = useState<number | "">("");
-  const [form, setForm] = useState<FaceReadingRequest>(DEFAULTS);
+  const [image, setImage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<FaceReading | null>(null);
@@ -54,21 +19,17 @@ export function FaceReadingPage() {
     api.listProfiles().then(setProfiles).catch(() => setProfiles([]));
   }, []);
 
-  function setField<K extends keyof FaceReadingRequest>(k: K, v: FaceReadingRequest[K]) {
-    setForm((f) => ({ ...f, [k]: v }));
-  }
-
   async function onAnalyze() {
+    if (!image) return;
     setBusy(true);
     setError(null);
     setResult(null);
     setOpenHistoryId(null);
     try {
-      const payload: FaceReadingRequest = {
-        ...form,
+      const r = await api.faceReading({
+        image,
         profile_id: profileId === "" ? undefined : Number(profileId),
-      };
-      const r = await api.faceReading(payload);
+      });
       setResult(r);
       setHistoryKey((k) => k + 1);
     } catch (err) {
@@ -91,12 +52,16 @@ export function FaceReadingPage() {
       <div className="space-y-5 min-w-0">
         <div>
           <h1 className="font-display text-2xl">{t("face.title")}</h1>
-          <p className="text-sm text-muted">{t("face.subtitle")}</p>
+          <p className="text-sm text-muted">{t("face.ai_subtitle")}</p>
         </div>
 
         <section className="rounded-2xl border border-ink/10 bg-white p-5 space-y-4">
-          <div className="grid md:grid-cols-[320px_1fr] gap-4">
-            <CameraCapture facingMode="user" />
+          <div className="grid md:grid-cols-[360px_1fr] gap-4 items-start">
+            <CameraCapture
+              facingMode="user"
+              onCapture={(dataUrl) => { setImage(dataUrl); setResult(null); }}
+              onClear={() => setImage(null)}
+            />
             <div className="space-y-3">
               <label className="block">
                 <span className="text-xs text-muted">{t("face.link_profile")}</span>
@@ -111,48 +76,18 @@ export function FaceReadingPage() {
                   ))}
                 </select>
               </label>
-              <div className="text-xs uppercase tracking-wider text-muted mt-2">
-                {t("face.section_form")}
-              </div>
 
-              <FieldSelect label={t("face.field_shape")} value={form.face_shape}
-                options={SHAPES.map((s) => [s, t(`face.shape.${s}`)])}
-                onChange={(v) => setField("face_shape", v as Shape)} />
-              <FieldSelect label={t("face.field_forehead")} value={form.forehead}
-                options={FOREHEADS.map((s) => [s, t(`face.size.${s}`)])}
-                onChange={(v) => setField("forehead", v as Size)} />
-              <FieldSelect label={t("face.field_brows")} value={form.brows}
-                options={BROWS.map((b) => [b, t(b === "medium" ? "face.size.medium" : `face.brow.${b}`)])}
-                onChange={(v) => setField("brows", v as Brow)} />
-              <FieldSelect label={t("face.field_eyes")} value={form.eyes}
-                options={EYES.map((e) => [e, t(e === "medium" ? "face.size.medium" : `face.eye.${e}`)])}
-                onChange={(v) => setField("eyes", v as Eye)} />
-              <FieldSelect label={t("face.field_nose")} value={form.nose}
-                options={NOSES.map((n) => [n, t(n === "high" ? "face.size.high" : `face.nose.${n}`)])}
-                onChange={(v) => setField("nose", v as Nose)} />
-              <FieldSelect label={t("face.field_mouth")} value={form.mouth}
-                options={MOUTHS.map((m) => [m, t(m === "medium" ? "face.size.medium" : `face.mouth.${m}`)])}
-                onChange={(v) => setField("mouth", v as Mouth)} />
-              <FieldSelect label={t("face.field_ears")} value={form.ears}
-                options={EARS.map((e) => [e, t(e === "medium" ? "face.size.medium" : `face.ear.${e}`)])}
-                onChange={(v) => setField("ears", v as Ear)} />
-              <FieldSelect label={t("face.field_chin")} value={form.chin}
-                options={CHINS.map((c) => [c, t(`face.chin.${c}`)])}
-                onChange={(v) => setField("chin", v as Chin)} />
-              <FieldSelect label={t("face.field_cheeks")} value={form.cheeks}
-                options={CHEEKS.map((c) => [c, t(`face.cheek.${c}`)])}
-                onChange={(v) => setField("cheeks", v as Cheek)} />
-              <FieldSelect label={t("face.field_skin")} value={form.skin}
-                options={SKINS.map((s) => [s, t(`face.skin.${s}`)])}
-                onChange={(v) => setField("skin", v as Skin)} />
+              <div className="rounded-xl border border-ink/10 bg-parchment/50 p-3 text-xs text-muted leading-relaxed">
+                {t("face.how_it_works")}
+              </div>
 
               <button
                 type="button"
                 onClick={onAnalyze}
-                disabled={busy}
-                className="btn-primary mt-2"
+                disabled={busy || !image}
+                className="btn-primary w-full"
               >
-                {busy ? t("face.analyzing") : t("face.analyze")}
+                {busy ? t("face.analyzing_ai") : image ? t("face.analyze") : t("face.need_photo")}
               </button>
               {error && <div className="text-fire text-sm">{error}</div>}
             </div>
@@ -168,22 +103,6 @@ export function FaceReadingPage() {
         currentId={openHistoryId}
       />
     </div>
-  );
-}
-
-function FieldSelect({ label, value, options, onChange }: {
-  label: string;
-  value: string;
-  options: [string, string][];
-  onChange: (v: string) => void;
-}) {
-  return (
-    <label className="block">
-      <span className="text-xs text-muted">{label}</span>
-      <select className="input mt-1" value={value} onChange={(e) => onChange(e.target.value)}>
-        {options.map(([v, lbl]) => <option key={v} value={v}>{lbl}</option>)}
-      </select>
-    </label>
   );
 }
 
@@ -227,14 +146,15 @@ function FaceResult({ r }: { r: FaceReading }) {
 
       <section className="rounded-2xl border border-ink/10 bg-white p-5">
         <div className="text-xs uppercase tracking-wider text-muted mb-2">
-          {t("face.features_breakdown")}
+          {t("face.detected_features")}
         </div>
+        <div className="text-[11px] text-muted mb-3">{t("face.detected_hint")}</div>
         <ol className="space-y-2">
           {r.features.map((f, i) => (
             <li key={i} className="rounded-xl border border-ink/10 p-3">
               <div className="flex items-center justify-between">
                 <div className="text-sm font-medium">
-                  {f.feature} · {f.trait}
+                  {f.feature} · <span className="text-muted">{f.trait}</span>
                 </div>
                 <span className="chip element-earth text-xs">{f.score}</span>
               </div>

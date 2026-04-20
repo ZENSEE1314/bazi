@@ -604,18 +604,11 @@ async function request<T>(
 }
 
 // --- Face reading (面相) ---------------------------------------------------
+// The image is required — the vision model reads it directly and derives
+// every facial trait. No form fields need to be sent from the client.
 export type FaceReadingRequest = {
   profile_id?: number;
-  face_shape: "round" | "square" | "oval" | "long" | "heart" | "diamond";
-  forehead: "high" | "medium" | "low" | "narrow" | "wide";
-  brows: "thick" | "medium" | "thin" | "arched" | "straight";
-  eyes: "big" | "medium" | "small" | "phoenix" | "deep";
-  nose: "straight" | "high" | "flat" | "hooked" | "small";
-  mouth: "full" | "medium" | "thin" | "wide" | "small";
-  ears: "large" | "medium" | "small" | "attached" | "detached";
-  chin: "strong" | "rounded" | "pointed" | "double" | "receding";
-  cheeks: "high" | "full" | "flat" | "hollow";
-  skin: "bright" | "neutral" | "dull" | "ruddy";
+  image: string; // data-URL or raw base64 JPEG / PNG
 };
 
 export type FaceFeature = {
@@ -646,20 +639,11 @@ export type FaceReading = {
 };
 
 // --- Palm reading (手相) ---------------------------------------------------
+// Same deal as face: just send the photo; the vision model derives the
+// 12 palm traits internally.
 export type PalmReadingRequest = {
   profile_id?: number;
-  hand_shape: "earth" | "air" | "water" | "fire";
-  dominant_hand: "left" | "right";
-  finger_length: "short" | "medium" | "long";
-  life_length: "long" | "medium" | "short" | "absent";
-  life_depth: "deep" | "medium" | "shallow" | "broken";
-  heart_length: "long" | "medium" | "short" | "absent";
-  heart_depth: "deep" | "medium" | "shallow" | "broken";
-  head_length: "long" | "medium" | "short" | "absent";
-  head_depth: "deep" | "medium" | "shallow" | "broken";
-  fate_length: "long" | "medium" | "short" | "absent";
-  fate_depth: "deep" | "medium" | "shallow" | "broken";
-  marriage_lines: "none" | "one" | "two" | "many";
+  image: string; // data-URL or raw base64 JPEG / PNG
 };
 
 export type PalmLine = {

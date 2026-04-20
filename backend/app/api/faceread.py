@@ -1,4 +1,9 @@
-"""Face reading (面相) endpoint."""
+"""Face reading (面相) endpoint.
+
+Flow: browser submits a photo → Ollama vision extracts the 10 traits →
+deterministic rule engine renders the narrative. The engine, not the LLM,
+writes the reading text, so we can't hallucinate palaces or scores.
+"""
 
 from __future__ import annotations
 
@@ -12,6 +17,7 @@ from ..models import Profile, User
 from ..quota import check_and_consume
 from ..schemas import FaceFeatureOut, FaceReadingOut, FaceReadingRequest
 from ...core.faceread.engine import analyse_face
+from ...core.faceread.vision import extract_face_traits
 
 router = APIRouter(prefix="/api/face", tags=["face-reading"])
 
@@ -31,17 +37,24 @@ def face_reading(
 
     check_and_consume("faceread", user, db)
 
+    # Step 1 — vision model looks at the photo and returns the 10 traits.
+    try:
+        traits = extract_face_traits(payload.image)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    # Step 2 — deterministic rule engine produces the reading narrative.
     r = analyse_face(
-        face_shape=payload.face_shape,
-        forehead=payload.forehead,
-        brows=payload.brows,
-        eyes=payload.eyes,
-        nose=payload.nose,
-        mouth=payload.mouth,
-        ears=payload.ears,
-        chin=payload.chin,
-        cheeks=payload.cheeks,
-        skin=payload.skin,
+        face_shape=traits["face_shape"],
+        forehead=traits["forehead"],
+        brows=traits["brows"],
+        eyes=traits["eyes"],
+        nose=traits["nose"],
+        mouth=traits["mouth"],
+        ears=traits["ears"],
+        chin=traits["chin"],
+        cheeks=traits["cheeks"],
+        skin=traits["skin"],
     )
 
     out = FaceReadingOut(
