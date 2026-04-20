@@ -56,11 +56,7 @@ export function ChatPage() {
     }
   }, [busy]);
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    const q = question.trim();
-    if (!q) return;
-
+  async function sendQuestion(q: string) {
     // Optimistic UI: show the user's message immediately.
     const optimistic: PendingMessage = {
       id: `pending-${Date.now()}`,
@@ -94,6 +90,24 @@ export function ChatPage() {
       setBusy(false);
     }
   }
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    const q = question.trim();
+    if (q) void sendQuestion(q);
+  }
+
+  // Quick-start prompts shown on the empty chat state. These intentionally
+  // open the conversation with simple, plain-language questions so the
+  // reader's "explain like I'm new to this" prompt kicks in naturally.
+  const quickPrompts: string[] = [
+    t("chat.qp_explain"),
+    t("chat.qp_career"),
+    t("chat.qp_love"),
+    t("chat.qp_year"),
+    t("chat.qp_colors"),
+    t("chat.qp_home"),
+  ];
 
   async function deleteSession(id: number) {
     if (!confirm(t("chat.delete_confirm"))) return;
@@ -162,10 +176,26 @@ export function ChatPage() {
         <section className="rounded-2xl border border-ink/10 bg-white flex flex-col min-h-[500px]">
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
             {!hasAnyContent && !busy && (
-              <div className="h-full flex items-center justify-center text-center text-sm text-muted">
-                <div>
-                  <div className="font-display text-3xl mb-2">八字</div>
-                  <p>{t("chat.empty")}</p>
+              <div className="h-full flex flex-col items-center justify-center text-center text-sm text-muted py-6">
+                <div className="font-display text-4xl mb-2">八字</div>
+                <p className="mb-5 max-w-md">{t("chat.empty")}</p>
+                <div className="w-full max-w-xl">
+                  <div className="text-[11px] uppercase tracking-[0.15em] text-muted/80 mb-2">
+                    {t("chat.quick_starters")}
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {quickPrompts.map((q, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => sendQuestion(q)}
+                        disabled={busy}
+                        className="text-left rounded-xl border border-ink/10 bg-parchment/60 hover:bg-parchment hover:border-earth/40 hover:-translate-y-0.5 active:translate-y-0 transition px-3 py-2.5 text-sm text-ink"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

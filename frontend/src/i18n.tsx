@@ -551,7 +551,14 @@ const en: Record<string, string> = {
   "chat.ask_placeholder":
     "How is my career luck in 2026? What should I change in my bedroom?",
   "chat.ask": "Ask",
-  "chat.empty": "Ask a question — career, love, money, timing, feng shui.",
+  "chat.empty": "Ask me anything about your chart. I'll explain it in plain language — no jargon required.",
+  "chat.quick_starters": "Or try one of these",
+  "chat.qp_explain": "Explain my chart to me in simple words.",
+  "chat.qp_career": "What's my natural career path, and what should I actually do this year?",
+  "chat.qp_love": "How does my chart read for relationships? What kind of partner fits me?",
+  "chat.qp_year": "What's the vibe of this year for me — opportunities, things to watch for?",
+  "chat.qp_colors": "Which colors, numbers, and directions are lucky for me day-to-day?",
+  "chat.qp_home": "How should I arrange my bedroom / desk based on my feng shui?",
   "chat.delete_confirm": "Delete this chat?",
 
   // Face reading (面相)
@@ -1225,7 +1232,14 @@ const zh: Record<string, string> = {
   "chat.elapsed": "已用时",
   "chat.ask_placeholder": "2026年我的事业运如何？卧室该怎么调整？",
   "chat.ask": "问",
-  "chat.empty": "请提问——事业、爱情、财运、择日、风水。",
+  "chat.empty": "有什么想了解的都可以问。我会用大白话解说您的命盘，不需要懂术语。",
+  "chat.quick_starters": "或试试这些",
+  "chat.qp_explain": "请用最简单的话解释我的命盘。",
+  "chat.qp_career": "我的天赋事业是哪条路？今年应该怎么做？",
+  "chat.qp_love": "我的感情运如何？什么样的伴侣最适合我？",
+  "chat.qp_year": "今年对我的基调是什么——机会与需要注意的地方？",
+  "chat.qp_colors": "日常哪些颜色、数字、方位对我最有利？",
+  "chat.qp_home": "根据我的风水，卧室和书桌该如何布置？",
   "chat.delete_confirm": "删除此对话？",
 
   // 面相
@@ -1902,7 +1916,14 @@ const ms: Record<string, string> = {
   "chat.ask_placeholder":
     "Bagaimana nasib kerjaya saya 2026? Apa perlu diubah dalam bilik tidur?",
   "chat.ask": "Tanya",
-  "chat.empty": "Tanya soalan — kerjaya, cinta, kewangan, masa, feng shui.",
+  "chat.empty": "Tanya apa sahaja tentang carta anda. Saya akan terangkan dalam bahasa biasa — tiada istilah pelik.",
+  "chat.quick_starters": "Atau cuba salah satu ini",
+  "chat.qp_explain": "Tolong terangkan carta saya dalam bahasa yang paling mudah.",
+  "chat.qp_career": "Apakah laluan kerjaya semula jadi saya, dan apa yang patut saya lakukan tahun ini?",
+  "chat.qp_love": "Bagaimana carta saya untuk percintaan? Pasangan macam mana yang sesuai?",
+  "chat.qp_year": "Bagaimana nada tahun ini untuk saya — peluang dan perkara yang perlu diberi perhatian?",
+  "chat.qp_colors": "Warna, nombor dan arah apa yang bertuah untuk saya setiap hari?",
+  "chat.qp_home": "Berdasarkan feng shui saya, bagaimana saya patut menyusun bilik tidur dan meja kerja?",
   "chat.delete_confirm": "Padam chat ini?",
 
   // Bacaan Wajah

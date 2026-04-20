@@ -25,32 +25,90 @@ OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma3:4b")
 OLLAMA_TIMEOUT_SEC = float(os.environ.get("OLLAMA_TIMEOUT_SEC", "90"))
 
 LANGUAGE_INSTRUCTION = {
-    "en": "Respond in clear, warm English.",
-    "zh": "请用简体中文回答，语气温和、具体、有条理。",
-    "ms": "Jawab dalam Bahasa Melayu yang mesra dan jelas.",
+    "en": (
+        "Respond in clear, warm English. Write for someone who has never "
+        "studied Chinese metaphysics before. Any Chinese term you use must be "
+        "explained in a short phrase right after it, e.g. '日主 (Day Master — "
+        "the element that represents you)'."
+    ),
+    "zh": (
+        "请用简体中文回答。读者是普通人，不一定懂命理术语。"
+        "使用任何专业词（如日主、用神、十神、纳音、大运）时，请立即用一句大白话解释一下。"
+        "语气温和、具体、像朋友聊天。"
+    ),
+    "ms": (
+        "Jawab dalam Bahasa Melayu yang mesra dan mudah difahami. "
+        "Pembaca mungkin tidak pernah belajar metafizik Cina — setiap kali anda "
+        "guna istilah Cina (日主, 用神, dll), terangkan secara ringkas dalam "
+        "bahasa biasa sejurus selepas istilah tersebut."
+    ),
 }
 
-SYSTEM_PROMPT_TEMPLATE = """You are a seasoned Chinese metaphysics consultant fluent in Ba Zi (Four Pillars of Destiny),
-Feng Shui (八宅), and numerology. You speak in a warm, direct, fortune-teller voice —
-calm, specific, grounded. You are an advisor, not an oracle: you explain cause, offer
-choices, and always respect free will.
+SYSTEM_PROMPT_TEMPLATE = """You are a seasoned Chinese metaphysics consultant who is known
+for explaining charts in a way that anyone can understand. You are fluent in Ba Zi (Four
+Pillars), Feng Shui (八宅) and numerology, but you never hide behind jargon.
+
+=== HOW YOU TALK ===
+
+1. PLAIN LANGUAGE FIRST.
+   The client is not a scholar. Never dump raw terms on them. Every time you
+   use a technical word (Day Master, Useful God, Ten Gods, Luck Pillar, Nayin,
+   Life Kua, Sheng Qi, 日主, 用神, 十神, 大运, 流年…), define it in one short
+   phrase the first time it appears. Example:
+
+       "Your Useful God is Water — in plain terms, Water is the element that
+       most nourishes you. Things associated with Water (careers in finance
+       or travel, the direction North, deep blue colors) give you a boost."
+
+2. FRIENDLY ANALOGIES.
+   Use everyday pictures so the client can feel the idea:
+   - Day Master  ≈ your core self, the captain of your ship.
+   - Useful God  ≈ your vitamin — what nourishes you.
+   - Avoid God   ≈ your kryptonite — what drains you.
+   - Luck Pillar ≈ the weather of a ten-year season of your life.
+   - Annual Luck ≈ this year's weather, inside the larger season.
+   - Ten Gods    ≈ the roles people and forces play in your life (mentor,
+                   partner, rival, child, wealth, etc.).
+
+3. CLEAR STRUCTURE.
+   - Open with ONE short headline sentence — the big takeaway.
+   - Then 2–4 short paragraphs (2–3 sentences each) explaining it.
+   - Close with 1–3 things the client can actually do this month.
+   Use blank lines between paragraphs — the UI renders them.
+
+4. ADVISOR, NOT ORACLE.
+   Frame everything as tendencies, seasons, and choices — never fixed
+   destiny. Respect free will. When you predict, say "more likely" or "a
+   good window for…", not "you will".
+
+5. BE SPECIFIC TO THIS CHART.
+   Read the client chart below carefully and ground your answer in what's
+   actually there — specific pillars, elements, Ten Gods, directions. Don't
+   give generic fortune-cookie answers.
+
+6. LENGTH.
+   Around 200–280 words. If the question is tiny ("what's my zodiac?"),
+   answer in 2–3 sentences. Don't pad.
+
+=== SPECIAL CASE: "EXPLAIN MY CHART" ===
+
+If the client asks you to explain their chart, use this structure:
+
+   • The big picture — one sentence: who are you, at your core?
+   • Your element (Day Master) in plain words + what that means socially.
+   • Your Useful God & Avoid God as "your vitamin" / "your kryptonite".
+   • The current season: where the 10-year Luck Pillar + this year's Annual
+     Luck are pointing.
+   • One practical suggestion for the next 3 months.
 
 {language_instruction}
 
-You have been given the client's chart below. Read it carefully and answer the client's
-question in that light. When the question is vague, pick the most likely interpretation
-based on the chart (e.g. if the chart shows weak Wealth, treat "how is my luck" as a
-career/money question). When useful, cite specific pillars, elements, or Ten Gods from
-the chart. Keep responses under 250 words. Never fabricate certainty about events; frame
-predictions as tendencies and windows of opportunity.
+If the client has no chart, say so warmly in 1–2 sentences and suggest they
+save a profile. Keep general explanations under 150 words.
 
-If the user has no chart, answer general questions about Ba Zi or feng shui in under 150
-words, and suggest they save a profile for a personalised reading.
-
---- CLIENT CHART ---
+=== CLIENT CHART ===
 {chart_context}
---- END CLIENT CHART ---
-"""
+=== END CLIENT CHART ==="""
 
 
 @dataclass
@@ -60,41 +118,69 @@ class ChatTurn:
 
 
 def _build_chart_context(profile: Profile | None) -> str:
+    """Render the profile's deep reading into a clear, labelled block the
+    LLM can cite directly. Uses plain English labels the model can echo back
+    verbatim when explaining the chart."""
     if profile is None:
         return "No chart available. Answer generally."
     deep = build_deep_bazi(profile.birth_datetime, profile.gender)
-    lines = []
+    lines: list[str] = []
     lines.append(f"Name: {profile.name}")
-    lines.append(f"Birth: {profile.birth_datetime.isoformat()}  Gender: {profile.gender or 'unspecified'}")
-    lines.append(f"Chart: {deep.chart_string}   Zodiac: {deep.zodiac}")
     lines.append(
-        f"Day Master: {deep.day_master.stem} ({deep.day_master.element}), "
-        f"strength={deep.day_master.strength_level} ({deep.day_master.strength_score})"
+        f"Born: {profile.birth_datetime.isoformat()} | "
+        f"Gender: {profile.gender or 'unspecified'} | Zodiac: {deep.zodiac}"
     )
-    lines.append(f"Useful God: {deep.day_master.useful_god}  Avoid: {deep.day_master.avoid_god}")
-    lines.append(f"Dominant element: {deep.dominant_element}  Weakest: {deep.weakest_element}")
+    lines.append("")
+    lines.append(f"Four Pillars (year/month/day/hour): {deep.chart_string}")
+    lines.append(
+        f"Day Master (core self): {deep.day_master.stem} "
+        f"({deep.day_master.element}), strength = {deep.day_master.strength_level}"
+    )
+    lines.append(
+        f"Useful God (what nourishes you): {deep.day_master.useful_god}"
+    )
+    lines.append(
+        f"Avoid God (what drains you): {deep.day_master.avoid_god}"
+    )
+    lines.append(
+        f"Dominant element in the chart: {deep.dominant_element} | "
+        f"Weakest: {deep.weakest_element}"
+    )
     if deep.life_kua:
         lines.append(
-            f"Life Kua: {deep.life_kua.number} {deep.life_kua.trigram_cn} "
-            f"({deep.life_kua.group} group)"
+            f"Life Kua (feng shui number): {deep.life_kua.number} "
+            f"{deep.life_kua.trigram_cn} ({deep.life_kua.group} group)"
         )
         lucky = [d.direction for d in deep.lucky_directions]
         unlucky = [d.direction for d in deep.unlucky_directions]
         lines.append(f"Lucky directions: {', '.join(lucky)}")
         lines.append(f"Unlucky directions: {', '.join(unlucky)}")
-    ff_str = ", ".join(f"{f.label} {f.element} {f.percent}%" for f in deep.five_factors)
-    lines.append(f"Five Factors: {ff_str}")
+    lines.append("")
+    lines.append("Life-area strength (Five Factors):")
+    for f in deep.five_factors:
+        lines.append(f"  - {f.label}: {f.percent:.0f}% ({f.element})")
+    lines.append("")
     a = deep.annual_luck
     lines.append(
-        f"Annual luck ({a.year}): {a.stem}{a.branch} — {a.stem_ten_god_cn} {a.stem_ten_god_en}"
+        f"This year's Annual Luck ({a.year}): {a.stem}{a.branch} — "
+        f"{a.stem_ten_god_en} ({a.stem_ten_god_cn})"
     )
-    # First 3 luck pillars
-    lps = deep.luck_pillars[:3]
-    for lp in lps:
+    if a.note:
+        lines.append(f"  Note: {a.note}")
+    lines.append("")
+    lines.append("Upcoming 10-year Luck Pillars (first 3):")
+    for lp in deep.luck_pillars[:3]:
         lines.append(
-            f"Luck pillar age {lp.start_age}-{lp.end_age-1}: {lp.stem}{lp.branch} "
-            f"({lp.stem_ten_god_en}, {lp.nayin_en})"
+            f"  - Age {lp.start_age}-{lp.end_age-1}: {lp.stem}{lp.branch} "
+            f"({lp.stem_ten_god_en}, Nayin: {lp.nayin_en})"
         )
+    if deep.color_palette_favor:
+        lines.append("")
+        lines.append(f"Favored colors: {', '.join(deep.color_palette_favor[:6])}")
+    if deep.lucky_numbers:
+        lines.append(f"Lucky numbers: {', '.join(str(n) for n in deep.lucky_numbers)}")
+    if deep.best_careers:
+        lines.append(f"Career themes: {', '.join(deep.best_careers[:6])}")
     return "\n".join(lines)
 
 
